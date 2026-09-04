@@ -4,6 +4,12 @@ An evidence-grounded reconstruction of the prompt grammar and workflows behind P
 
 > **Model provenance:** the reconstructed prompts are intended to test the GPT-6 Astra behavior shown in Peter's video. The two runnable prototypes in this repository were created by GPT-5.6-family coding models, not GPT-6. They are evaluation artifacts, not claims about GPT-6 output quality.
 
+## Visually grounded—not transcript-only
+
+A **GPT-5.6-family Codex analysis model “watched” Peter's complete 33:49 video** to reconstruct these prompts. Here, “watched” has a precise, auditable meaning: the analysis used the full audiovisual source, the complete time-coded transcript, 21 contact sheets sampling the entire runtime at five-second intervals, and 38 targeted full-resolution frames for scene composition, geometry, motion, controls, camera modes and interface details. The transcript established what Peter said; the video and frames established what the projects visibly did and looked like.
+
+The exact **Sol versus Terra** model variant was not exposed in the retained task artifacts, so this repository does not guess or claim one. The defensible provenance label is **GPT-5.6-family Codex analysis model**.
+
 [Open the GitHub Pages portal](https://az9713.github.io/3d-prompts-reconstruction/)
 
 ## Live projects
@@ -110,4 +116,3 @@ The published tree excludes local absolute paths, account identifiers, credentia
 ## License and attribution
 
 The original code and analysis in this repository are released under the [MIT License](LICENSE). Third-party names, video material and referenced prompt-corpus content are not relicensed; see the linked original sources and their terms.
-
