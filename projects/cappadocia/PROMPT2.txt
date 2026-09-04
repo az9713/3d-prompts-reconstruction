@@ -1,0 +1,419 @@
+Build a maximum-ambition, reference-grounded, interactive Three.js web experience for the PROJECT DELTA supplied at the end of this prompt.
+
+Deliver the complete runnable implementation—not a plan, mock-up, static image, design document, or partial scaffold.
+
+PRIORITY ORDER
+
+When requirements compete, use this strict priority order:
+
+1. Physical and factual correctness
+2. Photorealistic hero geometry, materials, and lighting
+3. Stable interaction and camera behavior
+4. Performance on the specified target hardware
+5. Environmental breadth and secondary animation
+6. Interface decoration
+
+Remove decorative motion, secondary controls, distant density, and interface ornament before sacrificing hero-object fidelity.
+
+REFERENCE AND PROVENANCE
+
+Research the subject before implementation when accuracy depends on geography, history, architecture, astronomy, geology, biology, machinery, or physics.
+
+Use authoritative primary references wherever practical. Distinguish:
+
+- Verified reference-derived facts
+- Reasonable approximations
+- Artistic interpretations
+- Unknown or disputed details
+
+Do not silently invent factual geometry, measurements, locations, mechanisms, or historical configurations.
+
+Licensed external geometry, HDR environments, PBR texture sets, terrain data, and reference images are explicitly authorized when they materially improve fidelity. Prefer CC0, public-domain, user-provided, or permissively licensed assets.
+
+Record for every external asset:
+
+- Source URL
+- Creator or institution
+- License
+- Local filename
+- Any transformations performed
+
+The finished application must not depend on mutable or unpinned remote resources at runtime. Store approved assets locally or pin immutable versions.
+
+FIRST-FRAME CONTRACT
+
+Open directly on the defining spectacle.
+
+The first useful rendered frame must communicate the premise, subject, scale, place, physical state, and emotional tone without requiring explanatory text.
+
+Deliberately compose:
+
+- Foreground subject or scale cue
+- Midground structure and activity
+- Background world and horizon
+- Physically coherent atmosphere
+- Human, vehicle, animal, or architectural scale references
+- Directional lighting and readable shadows
+- A clearly identifiable hero subject
+
+Do not begin with:
+
+- A splash screen
+- An empty loading state
+- A title-only reveal
+- A generic dark background
+- An isolated object floating in space
+- A dashboard covering the scene
+- A distant camera that hides geometric deficiencies
+
+The first-frame composition must remain effective when all nonessential interface elements are hidden.
+
+VISUAL REALISM — HIGHEST PRIORITY AND NON-NEGOTIABLE
+
+Target reference-grounded documentary photorealism.
+
+Do not use low-poly, illustrative, toy-like, voxel, diorama, flat-shaded, visibly procedural, or visibly primitive geometry for hero and near-field elements unless the PROJECT DELTA explicitly requests such a style.
+
+A viewer should initially interpret the scene as a high-quality location, architectural, scientific, wildlife, or documentary rendering—not as a collection of Three.js primitives.
+
+Hero objects must not visibly expose unchanged or lightly modified:
+
+- BoxGeometry
+- CylinderGeometry
+- ConeGeometry
+- SphereGeometry
+- Low-segment LatheGeometry
+- Flat planes masquerading as openings or cavities
+- Repeated identical procedural profiles
+
+Primitive geometry may be used internally, for collision volumes, or for distant LODs where its shape cannot be perceived.
+
+WORLD CONSTRUCTION
+
+Create a complete spatial world extending beyond the central subject.
+
+Define and implement:
+
+- A recognizable central anchor
+- Spatial or semantic zones
+- Natural connections between zones
+- Paths, flows, sightlines, or causal relationships
+- Foreground, middle-distance, and horizon content
+- Correct relative scale
+- Appropriate environmental context
+- Supporting human or ecological activity where justified
+
+Do not scatter unrelated objects across an empty plane.
+
+Do not substitute a generic landscape, city, forest, desert, mountain range, or ocean for the subject-specific world described by the PROJECT DELTA.
+
+Procedural generation must follow explicit geological, architectural, ecological, historical, or functional rules. Random distribution alone does not constitute world generation.
+
+GEOMETRIC DETAIL SYSTEM
+
+Build at least three geometric detail bands:
+
+1. HERO / NEAR FIELD
+
+Use unique geometry, recognizable silhouettes, rounded or fractured edges where appropriate, surface relief, contact geometry, and inspectable construction details.
+
+Hero assets must withstand close inspection without revealing obvious primitives, paper-thin surfaces, intersecting parts, missing backs, impossible supports, or repeated silhouettes.
+
+2. MID-RANGE
+
+Use simplified but still varied geometry. Preserve characteristic proportions, silhouette, color, material identity, and major surface features.
+
+Repetition must be masked through meaningful variation—not only random scale and rotation.
+
+3. FAR RANGE
+
+Use instancing, batching, simplified LODs, impostors, or merged geometry while preserving world extent, density, silhouette, and atmospheric depth.
+
+Transitions between detail levels must not produce distracting popping, disappearance, scale changes, or material discontinuities.
+
+MATERIAL FIDELITY
+
+Use physically based materials appropriate to the real substance represented.
+
+Hero materials normally require:
+
+- Calibrated albedo or base color
+- Roughness variation
+- Normal variation
+- Ambient-occlusion or crevice variation
+- Height or displacement where relief affects silhouette or shadow
+- Material-specific weathering
+- Scale-correct texture frequency
+- Controlled color variation
+- Correct treatment of transparency or transmission
+
+Do not use one flat color plus a roughness value for hero terrain, stone, wood, fabric, rock, vegetation, buildings, machinery, skin, water, or soil.
+
+Avoid uniformly distributed procedural noise. Weathering must follow plausible causes such as:
+
+- Water flow
+- Wind exposure
+- Gravity
+- Contact
+- Erosion
+- Material boundaries
+- Crevices
+- Sun exposure
+- Biological growth
+- Human wear
+
+Use triplanar mapping, appropriate UVs, decals, vertex blending, or layered materials to avoid stretching and obvious repetition.
+
+LIGHTING AND ATMOSPHERE
+
+Use physically coherent direct illumination plus environmental illumination.
+
+When appropriate, use:
+
+- A physically plausible sun-and-sky model
+- An HDR environment processed through PMREM
+- ACES filmic tone mapping
+- Calibrated exposure
+- Soft but directional contact shadows
+- Ambient occlusion or equivalent crevice shading
+- Atmospheric and aerial perspective
+- Height-dependent fog or haze
+- Volumetric-looking light only where physically justified
+- Color temperatures appropriate to the time and environment
+
+Shadowed surfaces must retain readable color and material detail. Do not allow foreground objects to collapse into featureless black silhouettes unless the PROJECT DELTA explicitly requires silhouettes.
+
+The visible sun, illumination direction, cast shadows, atmospheric scattering, reflections, and displayed astronomical values must agree.
+
+Do not use post-processing to disguise weak geometry or flat materials.
+
+PHYSICS — NON-NEGOTIABLE
+
+Laws of physics must be obeyed.
+
+Gravity, mass, structural support, contact, collisions, trajectories, scale, illumination, shadows, fluids, wind response, buoyancy, inertia, and material behavior must remain physically coherent whenever applicable.
+
+Stylization may simplify appearance, but it must not permit:
+
+- Unsupported floating geometry
+- Unexplained interpenetration
+- Objects passing through one another
+- Impossible trajectories
+- Incorrect centers of mass
+- Motion without a plausible force
+- Shadows inconsistent with the light
+- Fluids ignoring terrain or containment
+- Identical synchronized motion across independent objects
+- Effects without physically plausible causes
+
+Use one consistent world-unit system and document it.
+
+When a full simulation is computationally impractical, implement a conservative physically plausible approximation. Document what was approximated, why it was approximated, and its validity limits. Never present an expedient visual effect as an accurate simulation.
+
+MOTION AND BEHAVIOR
+
+The world should feel alive, but realism outranks animation count.
+
+Implement only the motion systems physically and narratively justified by the subject. One excellent behavior system is preferable to three decorative loops.
+
+Each system must specify:
+
+- Cause of motion
+- Direction or constraint
+- Speed range
+- Phase variation
+- Interaction with the environment
+- Boundary behavior
+- Collision or avoidance behavior where necessary
+- Reset behavior
+
+Avoid synchronized oscillation, random wandering without purpose, frozen crowds, intersecting vehicles, repeated identical paths, and decorative particles that do not respond to the world.
+
+Do not add secondary animation until hero geometry, materials, lighting, and close-view realism pass their acceptance tests.
+
+CAMERA AND EXPLORATION
+
+Provide orbit, pan, dolly, or first-person navigation appropriate to the subject. Tune controls with restrained inertia and safe limits.
+
+The camera must not:
+
+- Enter geometry unintentionally
+- Clip through the ground
+- Lose the world
+- Approach so closely that near-plane clipping destroys the view
+- Reveal unfinished backs or empty surroundings
+- Become disoriented after preset transitions
+
+Include Reset and three to five named camera presets.
+
+Every preset must have an explanatory or observational purpose, such as:
+
+- Whole-world establishing view
+- Human-scale ground view
+- Hero-object close inspection
+- Mechanism or process view
+- Cross-section or alignment view
+- Comparative or temporal view
+
+The closest preset must deliberately expose material and geometric quality. It must not hide deficiencies using fog, darkness, distance, depth of field, or extreme perspective.
+
+INTERFACE
+
+Keep the interface subordinate to the rendered world.
+
+Use:
+
+- Quiet, legible typography
+- High contrast
+- Compact controls
+- One controlled accent color
+- Clear state indicators
+- Visible keyboard focus
+- Responsive narrow-screen behavior
+
+Do not allow titles, telemetry, panels, or ornamental interface elements to obscure important geometry.
+
+Add only controls that produce an obvious, meaningful, reversible state change. Remove controls whose effects are imperceptible or purely decorative.
+
+Provide:
+
+- Keyboard-accessible controls
+- Reduced-motion behavior
+- Pause where continuous movement may be uncomfortable
+- Reset to a known valid state
+- Appropriate labels and accessible names
+
+TECHNICAL CONTRACT
+
+Use a minimal Vite project or a well-structured equivalent.
+
+Use a pinned Three.js version. Keep Three.js core and addon versions identical.
+
+Use:
+
+- Descriptive block-scoped identifiers
+- Modular scene systems
+- Centralized configuration
+- Deterministic seeded generation where reproducibility matters
+- InstancedMesh for genuinely repeated distant geometry
+- Merged static geometry where appropriate
+- Object and particle pooling
+- Frustum culling
+- LOD appropriate to the scale range
+- Resource disposal
+- Explicit loading and failure states
+- Renderer color-management settings appropriate to PBR rendering
+
+Clamp devicePixelRatio to an explicit maximum appropriate to the performance target.
+
+Avoid global namespace pollution, duplicate declarations, hidden network calls, silent exceptions, and unbounded allocation inside animation loops.
+
+Provide a quality selector with a documented degradation order.
+
+Reduce these first:
+
+1. Distant particles
+2. Distant population density
+3. Reflection resolution
+4. Shadow resolution outside the hero area
+5. Far vegetation density
+6. Atmospheric sample count
+7. Distant LOD complexity
+
+Preserve these until last:
+
+- Hero silhouette
+- Hero material fidelity
+- Correct spatial relationships
+- Essential interaction
+- Physically meaningful motion
+- Critical shadows
+- Close-view geometry
+
+CORRECTNESS AND DISCLOSURE
+
+Include a visible or documented “Method and limits” section stating:
+
+- Authoritative references used
+- Coordinate system and units
+- Important measurements
+- Physical or astronomical model
+- Procedural assumptions
+- Artistic interpretations
+- Known factual uncertainties
+- Simplifications
+- Features not validated
+- External asset provenance
+
+Do not describe the result as accurate, scientific, historical, navigational, medical, architectural, or physically validated unless corresponding checks were actually performed.
+
+VALIDATION VIEWS
+
+Before considering the project complete, capture and inspect:
+
+1. Reference comparison view
+2. First-frame hero view
+3. Close geometric inspection
+4. Clay-material or neutral-lighting view
+5. Material-debug view
+6. Shadow and illumination view
+7. Wide-world view
+8. Narrow-screen interface view
+
+Inspect these views for primitive geometry, repeated silhouettes, texture stretching, insufficient resolution, lighting discontinuities, intersections, floating objects, scale errors, shadow errors, and missing environmental context.
+
+ACCEPTANCE TESTS
+
+The project is complete only if all applicable tests pass:
+
+1. The first frame communicates the complete premise without explanation.
+2. The first frame resembles the intended reference class rather than a procedural diorama.
+3. Hero and near-field geometry survive close inspection.
+4. Hero materials contain visible macro, mesoscopic, and microscopic variation.
+5. No hero object visibly exposes an unchanged primitive.
+6. Repeated elements do not share obviously identical near-field silhouettes.
+7. Shadowed surfaces retain material detail.
+8. Lighting, visible sun, shadows, reflections, and displayed values agree.
+9. Physical motion has plausible causes, constraints, speeds, and collisions.
+10. The world maintains correct relative scale and subject-specific spatial relationships.
+11. Every control produces a clear and reversible result.
+12. Reset restores the authored hero composition and initial simulation state.
+13. Camera presets work without clipping or disorientation.
+14. The application remains usable at laptop and narrow viewport sizes.
+15. Quality reduction preserves hero fidelity and world identity.
+16. No console errors, uncaught exceptions, blank canvas, z-fighting, severe clipping, missing assets, or prolonged frame stalls occur.
+17. The production build runs locally using documented commands.
+18. References, assets, licenses, assumptions, and limitations are documented.
+19. The final result is evaluated against the PROJECT DELTA’s subject-specific acceptance tests.
+20. If any acceptance test fails, disclose it explicitly rather than claiming completion.
+
+DELIVERABLES
+
+Deliver:
+
+- Complete runnable source
+- Production build
+- README with exact installation and launch commands
+- Reference and asset-provenance manifest
+- Method and limitations documentation
+- Acceptance-test results
+- Hero, close-up, wide, material-debug, and narrow-screen screenshots
+- A brief defect ledger listing anything that remains below the requested standard
+
+Do not declare success merely because the application runs. Success requires subject fidelity, photorealistic rendering, physical coherence, interaction correctness, and documented validation.
+
+PROJECT DELTA
+
+CAPPADOCIA PHOTOREALISM AND FIDELITY DELTA
+
+Construct a coherent erosion-sculpted Cappadocian landscape: connected valleys, ridges, cliffs, pinnacles, hoodoo clusters, tuff strata and rock-hewn settlements. Do not scatter one repeated chimney profile across a heightfield.
+
+Generate several geological formation families using erosion-aware meshes, signed-distance forms, layered displacement or authored high-resolution assets. Every near and mid-range fairy chimney requires a materially different silhouette, asymmetrical caprock, undercut erosion, stratification, cracks and surface-weathering detail. Instancing is permitted only for distant formations whose repetition is not perceptible.
+
+Cave dwellings must be recessed cavities or parallax/displacement structures integrated into the rock. Black planes pasted onto boxes are prohibited. Settlements must follow the terrain and merge visually with the formations.
+
+Use layered tuff PBR materials with calibrated sandstone albedo, roughness variation, normal detail, erosion masks, sediment streaks and crevice occlusion. Use physically based dawn sky and HDR environmental illumination so balloon and terrain shadow sides retain readable detail.
+
+The nearest balloons require cloth panel geometry or normal detail, seams, wrinkles, fabric weave, plausible translucency/backlighting, wicker baskets, burners, ropes and hardware. Far balloons may use simplified instanced LODs. No foreground balloon may appear as a featureless black silhouette.
+
+The close-pass acceptance frame must simultaneously show detailed balloon fabric, basket construction, rope attachment and non-repeating geological erosion. The wide frame must read as a connected valley system, not cones distributed over a smooth orange plane.

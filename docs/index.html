@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Live Stonehenge and Cappadocia Three.js prototypes plus an evidence-grounded reconstruction of Peter Gostev's 3D prompt system.">
+  <title>3D Prompts Reconstruction</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0d100f;--panel:#171c19;--ink:#eef2eb;--muted:#aab4aa;--line:#364139;--accent:#7ed2ae}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}main{width:min(92rem,calc(100% - 2rem));margin:auto;padding:4rem 0 6rem}h1{font:800 clamp(3rem,8vw,7rem)/.9 Georgia,serif;letter-spacing:-.05em;max-width:12ch;margin:.4rem 0 1.5rem}h2{font:700 2rem/1.1 Georgia,serif}.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.13em;font-size:.75rem;font-weight:800}.deck{max-width:70ch;color:var(--muted);font-size:1.15rem}.notice{margin:2rem 0;padding:1rem 1.2rem;border-left:.3rem solid var(--accent);background:var(--panel)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem;margin-top:3rem}.card{padding:1rem;background:var(--panel);border:1px solid var(--line)}iframe{width:100%;height:min(67vh,42rem);border:1px solid var(--line);background:#000}.actions{display:flex;flex-wrap:wrap;gap:.65rem}.button{display:inline-block;padding:.55rem .85rem;border:1px solid var(--accent);color:var(--accent);text-decoration:none}.links{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--line)}a{color:var(--accent)}@media(max-width:900px){.grid{grid-template-columns:1fr}iframe{height:65vh}}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Two live WebGL experiments · one auditable reconstruction</p>
+    <h1>3D Prompts Reconstruction</h1>
+    <p class="deck">Prompts designed to test the GPT-6 Astra behavior shown in Peter Gostev's video. These two runnable projects were created by GPT-5.6-family coding models and are published as evaluation artifacts.</p>
+    <div class="notice"><strong>Provenance boundary:</strong> these are independent reconstructions. Peter's exact hidden prompts were not visible and are not claimed to have been recovered.</div>
+    <div class="grid">
+      <section class="card">
+        <h2>Stonehenge</h2>
+        <p>Present-day monument, solar presets, calculated shadows and an Avenue-centered camera journey.</p>
+        <iframe src="./stonehenge/" title="Live Stonehenge shadow and solstice explorer" loading="lazy" allowfullscreen></iframe>
+        <p class="actions"><a class="button" href="./stonehenge/">Open full screen</a><a class="button" href="https://github.com/az9713/3d-prompts-reconstruction/tree/main/projects/stonehenge">View source</a></p>
+      </section>
+      <section class="card">
+        <h2>Cappadocia</h2>
+        <p>A reference-grounded dawn flight with connected terrain, balloon motion and inspection modes.</p>
+        <iframe src="./cappadocia/" title="Live Cappadocia balloon flight" loading="lazy" allowfullscreen></iframe>
+        <p class="actions"><a class="button" href="./cappadocia/">Open full screen</a><a class="button" href="https://github.com/az9713/3d-prompts-reconstruction/tree/main/projects/cappadocia">View source</a></p>
+      </section>
+    </div>
+    <p class="links"><a href="./reconstruction/">Read the reconstruction report</a> · <a href="./reconstruction/DEVELOPMENT-JOURNEY.html">Read the development journey</a> · <a href="https://www.youtube.com/watch?v=GQPi39sjNhU">Watch Peter Gostev's source video</a> · <a href="https://github.com/az9713/3d-prompts-reconstruction">Repository</a></p>
+  </main>
+</body>
+</html>
+

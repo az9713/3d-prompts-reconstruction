@@ -1,0 +1,40 @@
+{
+  "artifacts": [
+    {
+      "path": "index.html",
+      "purpose": "Primary navigable visual reverse-engineering report",
+      "primary": true,
+      "source_dependencies": ["video-GQPi39sjNhU", "transcript-GQPi39sjNhU", "repo-petergpt-3d-prompt-collection"]
+    },
+    {
+      "path": "replication_guide.md",
+      "purpose": "Canonical copyable prompts, workflows, evidence labels, and timestamp inventory",
+      "primary": false,
+      "source_dependencies": ["video-GQPi39sjNhU", "transcript-GQPi39sjNhU", "repo-petergpt-3d-prompt-collection"]
+    },
+    {
+      "path": "prompt_reverse_engineering_playbook.html",
+      "purpose": "Methods guide explaining prompt and workflow reconstruction, supported meta-patterns, and an addressed unknown-unknowns register",
+      "primary": false,
+      "source_dependencies": ["video-GQPi39sjNhU", "transcript-GQPi39sjNhU", "repo-petergpt-3d-prompt-collection"]
+    },
+    {
+      "path": "DEVELOPMENT-JOURNEY.html",
+      "purpose": "Chronological, auditable development journey for the master prompt, all project deltas, repository role, implementation failures, and Stonehenge/Cappadocia realism revisions",
+      "primary": false,
+      "source_dependencies": ["video-GQPi39sjNhU", "transcript-GQPi39sjNhU", "repo-petergpt-3d-prompt-collection"]
+    },
+    {
+      "path": "source-manifest.json",
+      "purpose": "Source identity, representations, hashes, and coverage",
+      "primary": false,
+      "source_dependencies": []
+    },
+    {
+      "path": "evidence_frames/README.md",
+      "purpose": "Index to the twenty-one five-second contact sheets and thirty-eight targeted frames",
+      "primary": false,
+      "source_dependencies": ["video-GQPi39sjNhU-720"]
+    }
+  ]
+}

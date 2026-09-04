@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>GPT-6 Astra 3D demos — visual reverse engineering</title>
+  <style>
+    :root { color-scheme:light dark; --bg:#f3f0e8; --ink:#171714; --muted:#676258; --panel:#fffdf7; --line:#c9c2b3; --accent:#195f52; --code:#e8e3d8; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141714; --ink:#eef0ea; --muted:#adb3a9; --panel:#1d211d; --line:#3e463f; --accent:#7bd4bf; --code:#252b26; } }
+    * { box-sizing:border-box }
+    html { scroll-behavior:smooth }
+    body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif }
+    header,main,footer { width:min(86rem,calc(100% - 2rem)); margin-inline:auto }
+    header { padding:4rem 0 2rem; border-bottom:1px solid var(--line) }
+    header p { max-width:68rem; color:var(--muted) }
+    main { display:grid; grid-template-columns:minmax(13rem,19rem) minmax(0,1fr); gap:3rem; padding:2.5rem 0 5rem }
+    nav { align-self:start; position:sticky; top:1rem; padding:1rem 1.1rem; background:var(--panel); border:1px solid var(--line); max-height:calc(100vh - 2rem); overflow:auto }
+    nav a { display:block; margin:.38rem 0 }
+    article { min-width:0 }
+    h1 { font-size:clamp(2.4rem,6vw,5.2rem); line-height:.98; letter-spacing:-.045em; max-width:18ch; margin:0 0 1rem }
+    h2 { margin-top:3.4rem; border-top:1px solid var(--line); padding-top:1.2rem }
+    h3 { margin-top:2.4rem }
+    a { color:var(--accent); text-underline-offset:.18em }
+    table { width:100%; border-collapse:collapse; display:block; overflow:auto; font-size:.94rem }
+    th,td { border:1px solid var(--line); padding:.62rem; text-align:left; vertical-align:top }
+    th { background:var(--panel) }
+    code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace }
+    code { background:var(--code); padding:.1rem .3rem }
+    pre { overflow:auto; white-space:pre-wrap; padding:1rem 1.1rem; background:var(--panel); border:1px solid var(--line) }
+    pre code { background:transparent; padding:0 }
+    blockquote { margin:1.5rem 0; padding:.6rem 1.2rem; background:var(--panel); border-left:.35rem solid var(--accent) }
+    img { display:block; max-width:100%; height:auto; border:1px solid var(--line); margin:1rem 0 1.6rem }
+    hr { border:0; border-top:1px solid var(--line); margin:3rem 0 }
+    footer { padding:1.5rem 0 3rem; border-top:1px solid var(--line); color:var(--muted) }
+    @media (max-width:800px) { main { grid-template-columns:1fr } nav { position:static; max-height:none } }
+    @media print { nav { display:none } main { display:block } body { background:#fff; color:#000 } a { color:#000 } pre { break-inside:avoid } }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Evidence-grounded, end-to-end visual analysis</p>
+    <h1>GPT-6 Astra 3D demos — visual reverse engineering</h1>
+    <p>Thirty-six distinct 3D/interactive projects, the full one-shot gauntlet, the multi-hour builds, the reasoning-level comparisons, and replication-ready prompt deltas.</p>
+  </header>
+  <main>
+    <nav aria-label="Report navigation">
+      <strong>Navigate</strong>
+      <a href="DEVELOPMENT-JOURNEY.html">Development journey</a>
+      <a href="#executive-result">Executive result</a>
+      <a href="#evidence-and-coverage">Evidence and coverage</a>
+      <a href="#complete-scene-inventory">Scene inventory</a>
+      <a href="#what-peters-style-actually-is">Style system</a>
+      <a href="#shared-master-prompt">Master prompt</a>
+      <a href="#multi-hour-build-workflows">Multi-hour workflows</a>
+      <a href="#one-shot-prompt-deltas">One-shot prompts</a>
+      <a href="#reasoning-level-experiments">Reasoning comparisons</a>
+      <a href="#final-worlds-gallery">Final worlds</a>
+      <a href="#execution-and-evaluation-workflow">Execution workflow</a>
+      <a href="#limitations">Limitations</a>
+    </nav>
+    <article><h1 id="gpt-6-astra-3d-demos-end-to-end-visual-reverse-engineering">GPT-6 Astra 3D demos: end-to-end visual reverse engineering<a class="headerlink" href="#gpt-6-astra-3d-demos-end-to-end-visual-reverse-engineering" title="Permanent link">&para;</a></h1>
+<h2 id="executive-result">Executive result<a class="headerlink" href="#executive-result" title="Permanent link">&para;</a></h2>
+<p>The video contains <strong>36 distinct 3D or interactive projects</strong>, plus one animated peacock SVG study. Three opening projects are explicitly multi-hour, iterative builds. Twenty showcase projects are described as one-shot, Max-reasoning generations taking roughly 20–40 minutes each. Rome and Sagrada Família are then rerun across six reasoning levels. The final “Worlds” collection revisits Sagrada and adds eleven more scenes.</p>
+<p>The public <code>3d-prompt-collection</code> is highly relevant but is not a transcript of the prompts entered in this video. The video never shows prompt text. Twenty-one project entries have strong title-and-feature correspondence with repository entries; those are labeled <strong>repo-correlated</strong>. All other prompts below are <strong>reconstructed from the visible result and narration</strong>.</p>
+<p>The most reproducible strategy is not to paste 36 unrelated giant prompts. Use the <strong>shared master prompt</strong> once as the invariant “Peter-style compiler,” append a scene-specific delta, and evaluate the result against the visible acceptance checks.</p>
+<p><img alt="The complete 20-project one-shot collection" src="evidence_frames/targeted/t_0315.png"></p>
+<h2 id="evidence-and-coverage">Evidence and coverage<a class="headerlink" href="#evidence-and-coverage" title="Permanent link">&para;</a></h2>
+<p>Sources:</p>
+<ul>
+<li>Arena AI, Peter Gostev, <a href="https://www.youtube.com/watch?v=GQPi39sjNhU">“GPT-6-Astra | First impressions”</a>, 33:49.8, published 2026-09-03.</li>
+<li>Local 1920×1080, 50 fps audiovisual capture: <code>source_video.mp4</code>.</li>
+<li>Complete timestamped YouTube transcript: <code>transcript.txt</code>.</li>
+<li>Twenty-one contact sheets covering the full runtime at five-second intervals: <code>evidence_frames/contact_5s_720/</code>.</li>
+<li>Thirty-eight targeted 1280×720 frames for title, interface, and feature inspection: <code>evidence_frames/targeted/</code>.</li>
+<li>Peter Gostev’s <a href="https://github.com/petergpt/3d-prompt-collection">3D Prompt Collection</a>, local checkout at commit <code>b5b5df94ae9326523d57b70708a81f457e30fac0</code>.</li>
+</ul>
+<p>Coverage vector:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Coverage</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity</td>
+<td>Full</td>
+<td>Exact video, creator, duration, and repository resolved.</td>
+</tr>
+<tr>
+<td>Text/audio</td>
+<td>Full</td>
+<td>Complete timestamped transcript plus audio in the local capture.</td>
+</tr>
+<tr>
+<td>Visual</td>
+<td>Substantial</td>
+<td>Entire runtime sampled every five seconds, with denser targeted inspection around transitions. This is not a claim that every one of the ~101,000 frames was individually inspected.</td>
+</tr>
+<tr>
+<td>Temporal</td>
+<td>Substantial</td>
+<td>All chapters and intervening scenes covered; very brief sub-five-second states may be absent.</td>
+</tr>
+<tr>
+<td>Prompt provenance</td>
+<td>Partial</td>
+<td>No prompt text appears on screen. Repository correspondence is inferential unless separately documented.</td>
+</tr>
+</tbody>
+</table>
+<p>Evidence labels used below:</p>
+<ul>
+<li><strong>Observed:</strong> directly visible or spoken in the video.</li>
+<li><strong>Repo-correlated:</strong> title, concept, controls, and output strongly match a public repository entry, but verbatim use is not proven.</li>
+<li><strong>Reconstructed:</strong> a new replication prompt inferred from the demonstrated artifact.</li>
+<li><strong>Unknown:</strong> the video provides insufficient evidence; no detail is invented.</li>
+</ul>
+<h2 id="complete-scene-inventory">Complete scene inventory<a class="headerlink" href="#complete-scene-inventory" title="Permanent link">&para;</a></h2>
+<p>Times are the demonstrated screen intervals, rounded to the nearest few seconds.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th>Time</th>
+<th>Project</th>
+<th>Build class</th>
+<th>Prompt evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td>00:19–01:38</td>
+<td>London Through Time</td>
+<td>Iterative, Ultra</td>
+<td>Reconstructed; concept overlaps repo prompt 04 but is a broader nine-era city product.</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td>01:39–03:24</td>
+<td>D-Day Landings / Omaha Beach</td>
+<td>Iterative, Ultra, Blender + Three.js</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td>03:25–05:35</td>
+<td>PALIMPSEST Game Tour / The Fallen Coast</td>
+<td>Iterative, approximately overnight</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td>05:36–06:38</td>
+<td>Golden Gate Bridge</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 06.</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td>06:39–06:51</td>
+<td>Cappadocia Balloons</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 26.</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td>06:52–07:14</td>
+<td>Stonehenge</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 27.</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td>07:15–07:59</td>
+<td>Neuschwanstein</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td>08:00–08:51</td>
+<td>Giant Pacific Octopus</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td>08:52–09:05</td>
+<td>Formula 1</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td>09:06–09:54</td>
+<td>X-Ray Cabinet</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td>09:55–10:44</td>
+<td>Brooks Falls</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 59.</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td>10:45–11:19</td>
+<td>Inside a Leaf</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td>11:20–11:57</td>
+<td>Building the Great Pyramid</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated to prompt 16; prompt 17 is a related finished-Giza alternative.</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>11:58–12:55</td>
+<td>Monet’s Water Lilies</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 46.</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td>12:56–14:47</td>
+<td>Van Gogh’s Town</td>
+<td>One-shot, Max</td>
+<td>Reconstructed; prompt 45 is a related Starry Night world, not the same multi-painting town.</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td>14:48–15:42</td>
+<td>One Riverbank, 2,000 Years</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 04.</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td>15:43–16:29</td>
+<td>Tower of Babel</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 48.</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td>16:30–17:23</td>
+<td>A Garden in the Rain</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 50.</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td>17:24–18:22</td>
+<td>Manhattan</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 01.</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td>18:23–19:16</td>
+<td>Demolition Playground</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 32.</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td>19:17–20:03</td>
+<td>Istanbul</td>
+<td>One-shot, Max</td>
+<td>Repo-correlated: prompt 07.</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td>20:04–20:36</td>
+<td>Humpback Whale</td>
+<td>One-shot, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td>20:37–21:27</td>
+<td>Swiss Alpine Trail</td>
+<td>One-shot, Max, research-dependent</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td>21:28–23:04</td>
+<td>Peacock / PAVO</td>
+<td>Animated SVG, Max</td>
+<td>Reconstructed; included as a non-3D appendix.</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td>23:05–26:59</td>
+<td>Ancient Rome / Colosseum</td>
+<td>Six reasoning levels</td>
+<td>Repo-correlated to prompt 02; prompt 19 is a related Colosseum-only specification.</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td>27:00–28:50</td>
+<td>Sagrada Família</td>
+<td>Six reasoning levels</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td>28:51–29:06</td>
+<td>Paris</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 05.</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td>29:07–29:37</td>
+<td>Westminster</td>
+<td>Final Worlds collection, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td>29:38–29:54</td>
+<td>Washington / White House</td>
+<td>Final Worlds collection, Max</td>
+<td>Reconstructed.</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td>29:55–30:19</td>
+<td>Lost Valley</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 13.</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td>30:20–30:39</td>
+<td>Chocolate Garden / Cacao Conservatory</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 14.</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td>30:40–30:44</td>
+<td>Emerald City</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 12.</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td>30:45–30:49</td>
+<td>Floating Mountains</td>
+<td>Final Worlds collection, Max</td>
+<td>Reconstructed; repo prompt 30 is a related Zhangjiajie glide, not a proven match.</td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td>30:50–31:14</td>
+<td>Pileh Lagoon</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 10.</td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td>31:15–31:34</td>
+<td>Grand Budapest</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 15.</td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td>31:40–32:04</td>
+<td>Forbidden City</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 09.</td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td>32:05–32:29</td>
+<td>Atlantis</td>
+<td>Final Worlds collection, Max</td>
+<td>Repo-correlated: prompt 11.</td>
+</tr>
+</tbody>
+</table>
+<p>The video returns to D-Day during the closing argument at 32:35–33:19; that is a recap, not a new project.</p>
+<h2 id="what-peters-style-actually-is">What Peter’s style actually is<a class="headerlink" href="#what-peters-style-actually-is" title="Permanent link">&para;</a></h2>
+<p>The output style is not simply “low-poly Three.js.” It is a coupled system with eight recurring properties:</p>
+<ol>
+<li><strong>One immediately legible spectacle.</strong> The first frame explains the entire premise before the user touches anything.</li>
+<li><strong>A complete world, not a hero prop.</strong> Context extends to the horizon: terrain, water, supporting architecture, crowds, traffic, vegetation, atmospheric layers, and scale cues.</li>
+<li><strong>Editorial art direction.</strong> Warm off-whites, restrained greens and terracottas, large serif headlines, tiny uppercase metadata, generous whitespace, and one accent color. Dark themes are used when the subject demands it, as in X-Ray Cabinet and PAVO.</li>
+<li><strong>Stylized geometry with selective detail.</strong> Most scenes are procedural, low-poly or voxel-like. Fidelity comes from density, silhouette, composition, and coordinated systems rather than photoreal texture maps.</li>
+<li><strong>A designed camera journey.</strong> Wide hero view, orbit/pan/zoom, named presets, and at least one intimate or impossible vantage.</li>
+<li><strong>Visible dynamism.</strong> Boats, traffic, clouds, crowds, animals, particles, water, fire, construction, or transitions move from the first seconds. Peter’s repeated criticism is that Astra’s motion is sometimes less convincing than its static composition.</li>
+<li><strong>Controls that change the world.</strong> Time, weather, era, intensity, population, camera, or simulation state—not decorative sliders.</li>
+<li><strong>Performance-aware ambition.</strong> Instancing, pooled particles, merged geometry, LOD, capped pixel ratio, and quality degradation that preserves the central silhouette.</li>
+</ol>
+<p><img alt="London Through Time: cream editorial UI, low-poly city, turquoise Thames, and nine-era timeline" src="evidence_frames/targeted/t_0020.png"></p>
+<p>The transferable insight is to treat prompt design as <strong>specification compilation</strong>: global art direction + scene ontology + motion systems + interaction contract + performance contract + acceptance tests. A vague request for “a beautiful 3D scene” leaves the model to optimize the wrong objective.</p>
+<h2 id="shared-master-prompt">Shared master prompt<a class="headerlink" href="#shared-master-prompt" title="Permanent link">&para;</a></h2>
+<p>Append exactly one project delta from the later sections to this master prompt. This is a reconstruction of Peter’s recurring prompt grammar, not a quotation.</p>
+<pre><code class="language-text">Build a maximum-ambition interactive Three.js web experience for the PROJECT DELTA below. Deliver the complete runnable implementation, not a plan, mockup, static image, or partial scaffold.
+
+FIRST FRAME
+Open directly on the defining spectacle. A viewer must understand the premise, scale, place, and emotional tone in one glance. No splash screen, empty loading state, title-only reveal, generic dark background, or isolated hero object. Compose foreground, midground, background, atmosphere, and human-scale cues deliberately.
+
+WORLD AND MATERIAL LANGUAGE
+Create a complete spatial world extending beyond the central subject. Prefer procedural geometry, instancing, merged modules, generated textures, restrained stylization, and strong silhouettes. Use an editorial visual system: large refined serif display type, quiet sans-serif metadata, warm off-white or subject-appropriate dark surfaces, one controlled accent color, generous whitespace, compact translucent controls, and no generic dashboard chrome. Match the project delta’s explicit palette and material cues.
+
+MOTION
+The scene must already be alive. Implement at least three independent visible systems appropriate to the subject—examples include water, clouds, crowds, traffic, creatures, particles, fire, vegetation, machinery, or time transitions. Motion must have varied phase, speed, and paths; avoid synchronized toy-like oscillation.
+
+PHYSICS — NON-NEGOTIABLE
+Laws of physics must be obeyed. Gravity, structural support, contact, collisions, trajectories, scale, illumination, shadows, and material responses must remain physically coherent. Stylization may simplify appearance, but it must not permit unsupported floating geometry, unexplained interpenetration, impossible motion, or effects without plausible causes. When a full simulation is impractical, implement a conservative physically plausible approximation and disclose the approximation instead of presenting impossible behavior as accurate.
+
+EXPLORATION
+Provide orbit/pan/zoom or first-person controls as appropriate, tuned with light inertia. Include Reset and 3–5 named camera presets. Add only 2–5 compact controls, each causing an obvious visual state change. The primary scene remains unobstructed on a laptop and usable on a narrow viewport.
+
+TECHNICAL CONTRACT
+Use a minimal Vite project or a single HTML module. If using import maps, map &quot;three&quot; and &quot;three/addons/&quot; to the same pinned version before the module script. Use descriptive block-scoped identifiers; avoid duplicate declarations and global leakage. Clamp devicePixelRatio to 2. Use InstancedMesh for repeated geometry, pooled particles, merged static geometry, frustum culling, and at least two LOD tiers where scale requires it. Dispose regenerated resources. Provide a quality selector that removes distant density and expensive reflections before damaging the hero silhouette. Avoid external models and images unless the delta explicitly authorizes them.
+
+ACCEPTANCE TESTS
+1. The first frame communicates the entire idea without explanation.
+2. The nearest subject survives close inspection while the wide view remains coherent.
+3. At least three motion systems are visible simultaneously.
+4. Every control produces a clear and reversible change.
+5. Reset always restores the authored hero composition.
+6. No console errors, blank canvas, camera clipping, z-fighting, or severe frame stalls.
+7. The implementation runs locally with documented commands.
+
+PROJECT DELTA:
+[PASTE ONE DELTA HERE]
+</code></pre>
+<h2 id="multi-hour-build-workflows">Multi-hour build workflows<a class="headerlink" href="#multi-hour-build-workflows" title="Permanent link">&para;</a></h2>
+<p>The first three artifacts should not be treated as one-shot prompts. Peter explicitly says London required several generations, D-Day required many hours, and the open-world game ran for hours or overnight.</p>
+<h3 id="1-london-through-time">1. London Through Time<a class="headerlink" href="#1-london-through-time" title="Permanent link">&para;</a></h3>
+<p>Observed visual contract: a complete low-poly London and Thames; nine selectable eras—AD 120 Roman, 886 Saxon, 1215 Medieval, 1599 Tudor, 1666 Great Fire, 1720 Georgian, 1858 Victorian, 1940 Blitz, 2026 Modern; Aerial, First, Third, Overhead and map views; named places, moments, and walks; editorial cream-and-green UI. An OpenStreetMap attribution is visible, so the demonstrated build appears to use OSM-derived geographic data rather than being wholly procedural.</p>
+<p>Initial build prompt:</p>
+<pre><code class="language-text">Create “London Through Time,” an explorable Three.js historical city atlas centered on the Thames. Preserve one coordinate system and recognizable river geometry while the entire city transforms across nine eras: Roman AD 120, Saxon 886, Medieval 1215, Tudor 1599, Great Fire 1666, Georgian 1720, Victorian 1858, Blitz 1940, and Modern 2026. Use a warm cream map aesthetic, turquoise water, muted brick/stone/green palettes, editorial serif typography, and compact museum-quality controls. Include named places, curated historical moments, guided walks, Aerial/First/Third/Overhead cameras, a minimap, and a bottom time rail. Every era must be a complete world with era-specific street density, landmark silhouettes, clothing/crowd proxies, boats, smoke, traffic, and ambient motion. Transitions should preserve the camera and morph or cross-fade spatially corresponding districts rather than hard-cutting unrelated dioramas.
+</code></pre>
+<p>Recommended workflow:</p>
+<ol>
+<li>Define a canonical geographic graph: Thames spline, bridge anchors, landmark coordinates, road hierarchy, district polygons, and camera presets. Record the OSM license and preserve attribution if OSM data is used.</li>
+<li>Build one modern “truth” scene and validate navigation, map alignment, LOD, and performance.</li>
+<li>Represent each era as a data layer—building archetypes, road coverage, bridges, landmarks, vegetation, transport, population, and atmosphere—not as eight copied applications.</li>
+<li>Implement two adjacent eras first and prove the transition architecture before authoring all nine.</li>
+<li>Add first/third-person modes only after world streaming is stable.</li>
+<li>Run historical review separately. The video itself does not establish historical accuracy.</li>
+<li>Finish with the editorial UI, named moments, guided walks, and a visual regression set containing the same hero camera in all eras.</li>
+</ol>
+<h3 id="2-d-day-landings-omaha-beach">2. D-Day Landings / Omaha Beach<a class="headerlink" href="#2-d-day-landings-omaha-beach" title="Permanent link">&para;</a></h3>
+<p>Observed visual contract: a desaturated, overcast Omaha Beach; animated soldiers moving inland; landing craft and ships; Czech hedgehogs and beach obstacles; smoke and shell impacts; tanks and trucks; a phase timeline; black editorial overlay. Peter explicitly states that assets were designed in Blender and then composed into a Three.js environment.</p>
+<p>Initial orchestration prompt:</p>
+<pre><code class="language-text">Build an historically grounded, non-glamorizing interactive reconstruction of the Omaha Beach landings using a Blender-to-glTF asset pipeline and a Three.js runtime. The opening composition is a wide, cold, overcast beach under fire: surf and landing craft behind, layered infantry movement through obstacles in the midground, smoke and defended bluffs ahead. Organize the experience as a timeline with named phases such as approach, coast under fire, support from sea, inland pressure, and aftermath. Use desaturated sand, steel, olive drab, fog, wind-driven spray, restrained typography, and documentary pacing. The objective is scale, uncertainty, and coordinated motion, not an arcade shooter.
+</code></pre>
+<p>Recommended workflow:</p>
+<ol>
+<li>Create an asset bible before modeling: soldier silhouettes, landing craft, tank/truck families, obstacles, bunkers, weapons, debris, and LOD budgets.</li>
+<li>Ask the coding agent to generate Blender Python scripts for modular assets. Export named glTF/GLB files with consistent meters, origins, material slots, collision proxies, and animation clips.</li>
+<li>In Three.js, build terrain, surf, sky, fog, smoke, shell impacts, and a navmesh/flow field independently of the hero assets.</li>
+<li>Drive infantry by lane-based flow fields with per-agent phase offsets, hesitation, falls, cover-seeking, and local avoidance. Do not hand-author thousands of paths.</li>
+<li>Stage timeline phases by parameter changes—spawn rates, visibility, smoke, vessel positions, artillery, inland progress—not by loading separate pages.</li>
+<li>Add authored camera presets: landing craft, waterline, infantry shoulder, bluff defense, tank approach, and high overview.</li>
+<li>Profile draw calls, skinned meshes, and particles. Crowd diversity should come from animation offsets, equipment variants, and color/material variation.</li>
+<li>Validate military facts with specialist sources before calling the result accurate; Peter explicitly says he is not an expert.</li>
+</ol>
+<h3 id="3-palimpsest-game-tour-the-fallen-coast">3. PALIMPSEST Game Tour / The Fallen Coast<a class="headerlink" href="#3-palimpsest-game-tour-the-fallen-coast" title="Permanent link">&para;</a></h3>
+<p>Observed visual contract: a first-person open world with a stylized white-and-gold hand/device, large grassy terrain, coastline and water, trees, enemy encounters, jumping, ranged interaction, voice/audio, objectives, named regions, a companion or quest interface, and a polished dark editorial menu. The title and geography visible in the video include “The Fallen Coast,” “The Reasoning Wilds,” and “The Tomorrow Meridian.” Peter asked for approximately ten hours of gameplay but explicitly says he did not verify ten hours.</p>
+<p>Initial orchestration prompt:</p>
+<pre><code class="language-text">Create “PALIMPSEST,” a first-person exploration game set across a seamless fallen coastal world where abandoned scientific monuments and impossible geometric ruins emerge from grasslands, beaches, hills, and shallow seas. The player carries a white-and-gold field instrument that scans, interacts, and fires controlled pulses. Build three visually distinct regions—The Fallen Coast, The Reasoning Wilds, and The Tomorrow Meridian—connected by traversal, environmental puzzles, roaming enemies, short voiced encounters, and a quest chain that changes the landscape. Use restrained diegetic HUD elements, poetic editorial typography, pale skies, green-gold terrain, black/cream menus, and monumental low-poly forms. Prioritize satisfying locomotion, exploration loops, and a coherent two-hour vertical slice; architect content data so it can expand toward ten hours without pretending untested duration.
+</code></pre>
+<p>Recommended workflow:</p>
+<ol>
+<li>Build a 15-minute vertical slice: locomotion, jump, combat pulse, one enemy, one scan puzzle, one voiced encounter, save/load, and one region transition.</li>
+<li>Separate engine systems from content tables. Regions, encounters, loot, dialogue, and quests should be authored as data.</li>
+<li>Use terrain chunks, deterministic seeds, navmesh tiles, pooled enemies/projectiles, and distance-based simulation.</li>
+<li>Generate a content matrix before scaling: traversal verbs × enemy families × puzzle families × environmental states × narrative beats.</li>
+<li>Add audio only after interaction timings stabilize. Use subtitles and gain controls.</li>
+<li>Instrument playtime and completion paths. “Ten hours” is a measured content property, not a prompt adjective.</li>
+</ol>
+<h2 id="one-shot-prompt-deltas">One-shot prompt deltas<a class="headerlink" href="#one-shot-prompt-deltas" title="Permanent link">&para;</a></h2>
+<p>Peter says these twenty projects were one-shot Max generations, generally taking about 20–40 minutes. To reproduce that experiment, append one delta to the shared master prompt and do not send correction prompts until the run is archived. For a production result, use the evaluation loop later in this guide.</p>
+<h3 id="4-golden-gate-bridge">4. Golden Gate Bridge<a class="headerlink" href="#4-golden-gate-bridge" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-06">prompt 06</a>.</p>
+<pre><code class="language-text">Create a realistic, explorable Golden Gate Bridge spanning the full bay between the Presidio and Marin Headlands. Compose the entire red suspension structure, traffic, moving boats, wind-textured water, San Francisco distance silhouettes, headland terrain, clouds, and a height-based fog bank that gathers below and around the deck rather than becoming a flat global haze. Controls: coherent fog-bank height/density, traffic, sea state, time of day, weather, and named bridge/deck/aerial/waterline cameras. Preserve accurate bridge proportions and cable rhythm; never reduce it to two red towers in generic water.
+</code></pre>
+<h3 id="5-cappadocia-balloons">5. Cappadocia Balloons<a class="headerlink" href="#5-cappadocia-balloons" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-26">prompt 26</a>.</p>
+<pre><code class="language-text">Create Cappadocia at 06:10 sunrise: 80–100 patterned hot-air balloons moving at varied altitudes among Göreme’s warm sandstone valleys, fairy chimneys, cap rocks, and visible cave dwellings. Use long dawn shadows, airborne dust, subtle haze, tiny ground crews, and a restrained travel-editorial UI showing coordinates, time, balloon count, wind direction, flight speed, and morning-light controls. The hero camera floats among balloons; presets include valley floor, basket-height drift, high fleet view, and close pass. Avoid random cones on flat sand or identical synchronized balloons.
+</code></pre>
+<h3 id="6-stonehenge">6. Stonehenge<a class="headerlink" href="#6-stonehenge" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-27">prompt 27</a>.</p>
+<pre><code class="language-text">Create an accurate Stonehenge shadow-and-solstice explorer on Salisbury Plain. Model orthostats, lintels, irregular weathering, fallen stones, earthwork rings, the Avenue, distant fencing and visitors, and a grass field with directional wind. Open on the complete monument under pale daylight. Controls expose sun azimuth, elevation, midsummer/winter presets, grass wind, visitors, and an alignment guide; show the computed outer sarsen shadow. Orbit/dolly and reset to the Avenue. Do not reconstruct a perfectly complete circular wall when the current monument is selected.
+</code></pre>
+<h3 id="7-neuschwanstein">7. Neuschwanstein<a class="headerlink" href="#7-neuschwanstein" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create “Neuschwanstein — A dream above the forest,” a refined low-poly Bavarian landscape with the recognizable white castle, dark slate towers, red roofs, limestone crag, Alpsee lake, autumn forest, valley, and layered Alps. Use airy blue-gold light and travel-editorial typography. Controls choose Summer/Autumn/Mist, time from first light to blue hour, and four cameras: Marienbrücke hero, valley approach, aerial orbit, and castle terrace. Bridges and paths must connect physically to terrain—no floating bridge. Use dense instanced forest color variation and mountain LOD.
+</code></pre>
+<h3 id="8-giant-pacific-octopus">8. Giant Pacific Octopus<a class="headerlink" href="#8-giant-pacific-octopus" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create a bright “living study” of a giant Pacific octopus in a shallow kelp-and-rock habitat, styled as a natural-history editorial microsite. The octopus must have a convincing mantle, eight independently articulated arms, underside suckers, eye tracking, color mottling, and exploratory behaviors around rocks, shells, fish, and kelp. Offer Den, Eye-to-eye, Sucker study, and Above cameras; controls vary arm activity, temperament, depth, current, and living color. Motion must use different phase and reach targets per arm, with body propulsion and substrate contact—not one synchronized wiggle.
+</code></pre>
+<h3 id="9-formula-1">9. Formula 1<a class="headerlink" href="#9-formula-1" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Build an interactive Formula 1 aerodynamics and telemetry study around a detailed modern open-wheel car in deep green. Present the vehicle on a dark wind-tunnel stage with a restrained technical/editorial interface. Animate wheel spin, suspension response, steering, airflow ribbons, brake glow, DRS, and ride-height change. Controls switch fast approach/progressive braking/cornering states and expose speed, gear, throttle, brake, downforce balance, steering angle, and camera presets. Preserve correct open-wheel proportions, front/rear wings, halo, floor, and diffuser; avoid a generic sports car.
+</code></pre>
+<h3 id="10-x-ray-cabinet">10. X-Ray Cabinet<a class="headerlink" href="#10-x-ray-cabinet" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create “The X-Ray Cabinet,” a dark museum instrument that moves a scanning boundary through four charming objects—a red fox, pocket radio, weekend suitcase, and sleeping geode—and reveals coherent internal worlds. The fox transitions from exterior to skeleton and soft organs; the radio exposes circuitry and speaker; the suitcase reveals packed contents; the geode reveals crystalline layers. Use a teal-black editorial UI, specimen labels, orbit/position/rotate modes, a draggable scan plane, three spectra, annotated discoveries, and smooth cross-section clipping. Internal and external geometry must stay registered during the transition.
+</code></pre>
+<h3 id="11-brooks-falls">11. Brooks Falls<a class="headerlink" href="#11-brooks-falls" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-59">prompt 59</a>.</p>
+<pre><code class="language-text">Create Brooks Falls, Alaska, at peak salmon run: a wide whitewater lip filled with continuous varied salmon arcs and several brown bears using distinct fishing behaviors. Add hundreds of fish in the pool, spray, river current, spruce banks, rocks, gulls, and distant watchers. Open mid-action. Controls change run intensity, catch frequency, current, and classic/bank/pool/above cameras; show live leaps-per-minute and catches. Most fish should fail believably; bears must feel heavy and unsynchronized.
+</code></pre>
+<h3 id="12-inside-a-leaf">12. Inside a Leaf<a class="headerlink" href="#12-inside-a-leaf" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create “Inside a Leaf,” a continuous scientific zoom journey from an intact sunlit leaf through vein network, epidermis, stomata, mesophyll, chloroplasts, thylakoid stacks, photosynthetic complexes, and molecular scale. Use a luminous green biological-atlas aesthetic, a ten-stage bottom scale rail, sparse labels, and smooth camera handoffs so spatial relationships remain understandable. Animate stomatal opening, gas particles, water transport, chloroplast drift, photon arrival, and molecular activity. Label uncertainty and keep scales explicit; scientific legibility matters more than decorative fantasy.
+</code></pre>
+<h3 id="13-building-the-great-pyramid">13. Building the Great Pyramid<a class="headerlink" href="#13-building-the-great-pyramid" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-16">prompt 16</a>, with <a href="https://github.com/petergpt/3d-prompt-collection#prompt-17">prompt 17</a> as a finished-Giza alternative.</p>
+<pre><code class="language-text">Create a time-scrubbable Great Pyramid construction world around 2560 BCE. Show the Nile and harbor, quarry/stone logistics, causeway, ramps and scaffolds, rope teams, sledges, oxen, workshops, surveyors, workers, Sphinx, satellite monuments, desert and cultivated strips. A build-progress slider must visibly grow the pyramid from foundations through casing and capstone while workforce and sunlight controls change activity and composition. Use warm sand, pale limestone, compact archaeological UI, and wide/ground/ramp/river cameras. Do not present one static finished ruin.
+</code></pre>
+<h3 id="14-monets-water-lilies">14. Monet’s Water Lilies<a class="headerlink" href="#14-monets-water-lilies" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-46">prompt 46</a>.</p>
+<pre><code class="language-text">Create a navigable Giverny pond in which every surface is made from thick, floating Impressionist color dabs rather than realistic textures. Drift at water level through lilies, willow curtains, the arched bridge, gardens, reflections, and a painted sky. Light states move from silver morning through pink sunset to blue evening and recompose the palette. Controls choose light series, drift, steering, paint-finness, and quality. Geometry should read as brush marks at every scale; avoid a normal pond with a post-processing filter.
+</code></pre>
+<h3 id="15-van-goghs-town">15. Van Gogh’s Town<a class="headerlink" href="#15-van-goghs-town" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Build a continuous walkable world connecting several recognizable Van Gogh paintings as adjacent places: The Bedroom in Arles, the Yellow House and café street at night, a starry blue town, wheat fields, cypresses, and an engulfing sunflower garden. Everything—walls, ground, sky, furniture, people, stars, plants—must be constructed from dimensional impasto strokes and Van Gogh’s yellow/ultramarine/green palette. Use first-person movement with seamless doors and paths between paintings; animate sky strokes, lamplight, wheat, cypresses, and birds. Preserve each painting’s characteristic composition while making the transitions spatially coherent.
+</code></pre>
+<h3 id="16-one-riverbank-2000-years">16. One Riverbank, 2,000 Years<a class="headerlink" href="#16-one-riverbank-2000-years" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-04">prompt 04</a>.</p>
+<pre><code class="language-text">Fix one camera over the Thames and transform the same riverbank continuously across Roman, Medieval, Great Fire, Georgian, Victorian, Blitz, and modern London. Every slider stop is a complete moving world, not a sparse comparison model. Preserve river and landmark anchors while bridges, roofs, streets, vessels, industry, population, fire, searchlights, traffic, and skyline change. Use a quiet cream historical-atlas UI with a bottom timeline, camera presets, and animated transition choreography.
+</code></pre>
+<h3 id="17-tower-of-babel">17. Tower of Babel<a class="headerlink" href="#17-tower-of-babel" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-48">prompt 48</a>.</p>
+<pre><code class="language-text">Create Bruegel’s Tower of Babel as a colossal living construction site and complete sixteenth-century port city. Match the painting’s spiraling, part-finished architecture, red roofs, arched galleries, ramps, cranes, crowds, quays, ships, countryside, and cloud-wrapped summit. Thousands of workers should haul, carve, climb, and operate machinery with varied phase. Controls choose painting/king’s inspection/port/summit views, afternoon light, population activity, cloud height, and quality. Avoid a smooth fantasy ziggurat or empty monumental model.
+</code></pre>
+<h3 id="18-a-garden-in-the-rain">18. A Garden in the Rain<a class="headerlink" href="#18-a-garden-in-the-rain" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-50">prompt 50</a>.</p>
+<pre><code class="language-text">Place the viewer one millimeter tall on a leaf during a bright rainstorm. Grass becomes a forest; raindrops become transparent boulders that impact as crowns, roll, merge, refract the upside-down garden, and bend leaves. Add ants sheltering under a petal, a bee passing like an aircraft, mushrooms, pollen, insects, wind, and puddle flow. Controls scrub storm phase, drop scale/rate, wind, slow motion, and ant/leaf/ground cameras. Water material and impact behavior are the hero; do not make a generic macro garden.
+</code></pre>
+<h3 id="19-manhattan">19. Manhattan<a class="headerlink" href="#19-manhattan" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-01">prompt 01</a>.</p>
+<pre><code class="language-text">Create the complete island of Manhattan from Battery to Inwood as one continuous explorable procedural object at golden hour. Preserve the island outline, rotated grids, Broadway, Central Park, district height patterns, landmark silhouettes, bridges, rivers, boats, traffic, water towers, roofs, and close-range street detail. The camera must dive seamlessly from a whole-island hero view to street scale with staged LOD. Controls provide full island, harbor, Midtown, Central Park, bridge, and uptown views plus light and activity. Never substitute a generic rectangular city.
+</code></pre>
+<h3 id="20-demolition-playground">20. Demolition Playground<a class="headerlink" href="#20-demolition-playground" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-32">prompt 32</a>.</p>
+<pre><code class="language-text">Build a sunlit downtown block designed for reversible destruction. The player controls a crane-mounted wrecking ball, places charges, triggers chain collapses, slows time, and rewinds every piece to the pristine city. Buildings need structural layers, breakable facade/floor modules, dust and debris pooling, weighty cable physics, scoring by mass demolished, and a 60-second memory timeline. Use a clean civic-editorial UI and overview/ball/ground/cinematic cameras. Destruction physics—not decorative explosions—is the core system.
+</code></pre>
+<h3 id="21-istanbul">21. Istanbul<a class="headerlink" href="#21-istanbul" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-07">prompt 07</a>.</p>
+<pre><code class="language-text">Create Istanbul’s historic peninsula and Golden Horn at golden hour: Hagia Sophia, Blue Mosque, minarets, Galata side, Galata Bridge, dense layered roofs, ferries, fishing and tour boats, wakes, gulls, traffic, waterfront activity, and distant Bosphorus bridges. Open on a museum-quality full panorama with glittering turquoise water and warm haze. Provide monument, bridge, ferry, skyline, and aerial cameras plus time/activity controls. Ships must follow nonintersecting channels; avoid a generic mosque skyline.
+</code></pre>
+<h3 id="22-humpback-whale">22. Humpback Whale<a class="headerlink" href="#22-humpback-whale" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create “The Great Ascent,” a bright natural-history study of a humpback whale breaching through a calm blue ocean. The same whale must remain coherent above and below the surface, with believable body arc, fins, droplets, splash crown, foam ring, bubbles, schools of fish, caustics, and a smooth surface cross-section. Controls switch above/beneath views and vary breach frequency, splash volume, underwater visibility, light angle, and playback. Use pale aqua editorial typography and a few named cameras. Motion must convey mass and momentum rather than a slow rigid rotation.
+</code></pre>
+<h3 id="23-swiss-alpine-trail">23. Swiss Alpine Trail<a class="headerlink" href="#23-swiss-alpine-trail" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed; research-dependent.</strong></p>
+<pre><code class="language-text">Research and build a premium interactive 3D trail guide for a real Swiss Alpine route above the Aletsch Glacier. Use verified terrain/elevation data, a shaded relief model, glacier geometry, trail line, huts, passes, viewpoints, hazard areas, distance and elevation profile, stage breakdown, weather/season context, and labeled POIs. The default page combines an editorial left rail—distance, ascent, grade, estimated time—with a large manipulable terrain model and synchronized elevation scrubber. Every geographic label and metric must cite its source; never invent a plausible mountain route.
+</code></pre>
+<h3 id="24-peacock-pavo-animated-svg">24. Peacock / PAVO animated SVG<a class="headerlink" href="#24-peacock-pavo-animated-svg" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed; not a 3D demo.</strong></p>
+<pre><code class="language-text">Create the most intricate self-contained animated SVG you can: an Indian peafowl in a dark museum study, with a 193-feather fully fanned train, iridescent eye spots, fine barb geometry, layered body plumage, head tracking, breathing, individual feather sway, staged unfurl/refurl animation, three lighting palettes, zoom/download controls, and restrained natural-history typography. Use reusable SVG symbols, gradients, masks, filters, and transform groups; maintain coherent anatomy and smooth performance rather than merely maximizing path count.
+</code></pre>
+<h2 id="reasoning-level-experiments">Reasoning-level experiments<a class="headerlink" href="#reasoning-level-experiments" title="Permanent link">&para;</a></h2>
+<h3 id="25-ancient-rome-colosseum">25. Ancient Rome / Colosseum<a class="headerlink" href="#25-ancient-rome-colosseum" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-02">prompt 02</a>; <a href="https://github.com/petergpt/3d-prompt-collection#prompt-19">prompt 19</a> is a more focused alternative.</p>
+<pre><code class="language-text">Create a high-definition voxel-art simulation of ancient Rome centered on a detailed Colosseum. Build a solid isometric city tile with the Colosseum cavea and hypogeum, Forum and basilicas, temples, Circus Maximus, aqueduct, dense insulae, roads, Tiber edge, hills, cypress/pine vegetation, crowds, and warm Mediterranean light. Use collision-aware zoning, instanced voxels, responsive orbit/zoom, recenter, flyover, day/sunset, labels, and compact editorial controls. No overlapping buildings, hollow ground, sparse museum diorama, or isolated arena.
+</code></pre>
+<p>Run the exact same prompt once at Low, Medium, High, Extra High, Max, and Ultra. Archive code, token use, wall time, screenshot, console log, and measured geometry/draw-call counts for each. The video shows a clear richness increase from Low to Medium/High, but not a monotonic aesthetic improvement: Max has less harmonious color in one run, and Peter judges Ultra not obviously better than Max. Because seed and sampling variation are uncontrolled, this is illustrative rather than a clean causal experiment.</p>
+<h3 id="26-sagrada-familia">26. Sagrada Família<a class="headerlink" href="#26-sagrada-familia" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create a complete, explorable low-poly Barcelona centered on an architecturally recognizable Sagrada Família. Model the Nativity/Passion massing, clustered towers with colored pinnacles, portals, branching interior columns, stained glass, nave, surrounding Eixample grid, streets, trees, visitors, and changing Mediterranean light. Open on a clean aerial hero composition; include facade, nave, tower, city, and high-orbit cameras with light/time and crowd controls. Use cream stone, restrained pastel city blocks, jewel stained glass, editorial typography, and progressive LOD. Avoid generic Gothic spires or a church isolated on an empty plane.
+</code></pre>
+<p>Use the same six-level measurement protocol as Rome. Judge more than screenshot richness: landmark proportion, navigable interior, camera quality, UI obstruction, runtime, draw calls, and whether additional reasoning produced useful systems rather than decorative geometry.</p>
+<h2 id="final-worlds-gallery">Final Worlds gallery<a class="headerlink" href="#final-worlds-gallery" title="Permanent link">&para;</a></h2>
+<p>The final collection contains twelve titled worlds. Sagrada is already specified above; the remaining eleven deltas follow.</p>
+<p><img alt="The complete final Worlds collection" src="evidence_frames/targeted/t_1725.png"></p>
+<h3 id="27-paris">27. Paris<a class="headerlink" href="#27-paris" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-05">prompt 05</a>.</p>
+<pre><code class="language-text">Create a complete museum-quality Paris vista centered on the Eiffel Tower: precise tower silhouette and lattice impression, Champ de Mars, Trocadéro, Seine, bridges, fountains, avenues, cream rooftops, trees, boats, traffic, visitors, and changing light. The first frame is a bright axial postcard with true urban scale; exploration must reward both close tower inspection and a city-wide view. Use instancing and LOD rather than an isolated tower in a blank grid.
+</code></pre>
+<h3 id="28-westminster">28. Westminster<a class="headerlink" href="#28-westminster" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create a complete Westminster riverfront in pale daylight: Palace of Westminster with correct Thames orientation, Elizabeth Tower clock faces, Victoria Tower, Westminster Hall massing, Westminster Bridge, London Eye, embankments, boats, buses, traffic, pedestrians, and water reflections. Provide river, bridge, aerial, clock-tower, and courtyard views. Preserve relative placement and orientation—the video’s generated church/complex orientation is acknowledged as imperfect.
+</code></pre>
+<h3 id="29-washington-white-house">29. Washington / White House<a class="headerlink" href="#29-washington-white-house" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed.</strong></p>
+<pre><code class="language-text">Create “President’s Park,” a complete bright low-poly White House environment: north and south facades, curved South Portico, wings, lawns, Ellipse, paths, fountains, gardens, fences, security perimeter, mature trees, nearby federal-city massing, pedestrians and subtle service activity. Use an aerial civic-atlas composition with North Lawn, South Lawn, Ellipse, ground, and orbit cameras. Avoid a lone mansion on a green rectangle.
+</code></pre>
+<h3 id="30-lost-valley">30. Lost Valley<a class="headerlink" href="#30-lost-valley" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-13">prompt 13</a>.</p>
+<pre><code class="language-text">Create a vast protected dinosaur sanctuary as living wildlife: emerald river basin, dense layered jungle, waterfalls, cliffs and mist, with a long-neck herd crossing shallow water, smaller herbivores among ferns, predators at distance, and pterosaurs in sun shafts. Use varied autonomous behaviors and ecological spacing, not museum poses. Open on a high overlook, then allow river-level, herd-follow, canopy, waterfall, and night cameras.
+</code></pre>
+<h3 id="31-chocolate-garden-cacao-conservatory">31. Chocolate Garden / Cacao Conservatory<a class="headerlink" href="#31-chocolate-garden-cacao-conservatory" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-14">prompt 14</a>.</p>
+<pre><code class="language-text">Create an original edible valley inside a monumental glass-roofed confectionery works: chocolate river, candy orchards, biscuit bridges, caramel falls, pastel sweets, copper vats, pipes, galleries, delivery systems, turning machinery, and tiny workers. Compose the bright cream/cocoa/pink world like a luxury conservatory brand rather than a dark factory. Include garden, river, machine, overhead cutaway, and production-flow cameras with sweetness/material/activity controls.
+</code></pre>
+<h3 id="32-emerald-city">32. Emerald City<a class="headerlink" href="#32-emerald-city" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-12">prompt 12</a>.</p>
+<pre><code class="language-text">Create the Emerald City at the end of the Yellow Brick Road as a complete luminous destination: green crystal towers, art-deco spires, gates, gardens, fountains, markets, citizens, surrounding fields, and the gold road arriving in the foreground. Use bright mint, emerald, cream, and gold with airy storybook-editorial UI. Provide arrival, gate, market, tower, and aerial cameras and controls for crystal glow, activity, and weather.
+</code></pre>
+<h3 id="33-floating-mountains">33. Floating Mountains<a class="headerlink" href="#33-floating-mountains" title="Permanent link">&para;</a></h3>
+<p><strong>Reconstructed; repo prompt 30 is only a related reference.</strong></p>
+<pre><code class="language-text">Create a serene airborne archipelago of enormous vertical stone islands floating above a white cloud sea. Each island has eroded cliffs, hanging roots, waterfalls disappearing into mist, dense green crowns, bridges, birds, drifting seed particles, and smaller rocks orbiting at varied depths. The camera glides freely between islands with near-collision avoidance; controls vary mist height, wind, waterfall flow, island spacing, and sunrise/storm light. Ensure strong parallax and scale—never arrange identical rocks in one plane.
+</code></pre>
+<h3 id="34-pileh-lagoon">34. Pileh Lagoon<a class="headerlink" href="#34-pileh-lagoon" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-10">prompt 10</a>.</p>
+<pre><code class="language-text">Create the complete Pileh Lagoon at Phi Phi Leh: radiant turquoise water enclosed by towering jungle-covered limestone walls, long-tail boats, swimmers, kayaks, reef shallows, fish, birds, cliffs, hidden ledges, and a visible sea opening. Open on an elevated paradise composition and support waterline, boat, cliff, underwater, and full-lagoon views. Prioritize water depth/color, karst scale, moving boats with wakes, and dense irregular vegetation.
+</code></pre>
+<h3 id="35-grand-budapest">35. Grand Budapest<a class="headerlink" href="#35-grand-budapest" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-15">prompt 15</a>.</p>
+<pre><code class="language-text">Create a complete alpine resort inspired by the Grand Budapest at its peak: towering symmetrical pink hotel, funicular and stations, forecourt, terraces, snowy mountains, village, period cars, arriving guests, lobby and dining glimpses, service routes, and coordinated staff activity. Use centered storybook compositions, pink/red/cream palette, pristine snow, and diorama-like low-poly geometry. Cameras cover facade, funicular, lobby, service, village, and alpine overview.
+</code></pre>
+<h3 id="36-forbidden-city">36. Forbidden City<a class="headerlink" href="#36-forbidden-city" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-09">prompt 09</a>.</p>
+<pre><code class="language-text">Create Beijing’s Forbidden City during the first clear snowfall: the entire axial palace world of vermilion walls, golden roofs under fresh snow, white marble terraces, gates, courtyards, bridges, gardens, lantern warmth, layered horizons, sparse attendants, and drifting flakes. Use immense ordered symmetry and bright winter haze. Cameras should traverse the central axis, courtyard level, roofline, garden, and full aerial view without collapsing the complex to one generic temple.
+</code></pre>
+<h3 id="37-atlantis">37. Atlantis<a class="headerlink" href="#37-atlantis" title="Permanent link">&para;</a></h3>
+<p><strong>Repo-correlated:</strong> <a href="https://github.com/petergpt/3d-prompt-collection#prompt-11">prompt 11</a>.</p>
+<pre><code class="language-text">Create Atlantis as a living underwater capital, not ruins: immense concentric boulevards and canals, luminous domes, pale gold towers, coral gardens, protected plazas, citizens, schools of fish, transit, sunbeams, and a colossal whale passing above for scale. Open on the full circular city in clear cyan water. Provide capital, canal, dome, street, whale, and surface-looking-down views with current, light, population, and whale-path controls.
+</code></pre>
+<h2 id="execution-and-evaluation-workflow">Execution and evaluation workflow<a class="headerlink" href="#execution-and-evaluation-workflow" title="Permanent link">&para;</a></h2>
+<h3 id="reproduce-the-benchmark-faithfully">Reproduce the benchmark faithfully<a class="headerlink" href="#reproduce-the-benchmark-faithfully" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Start each one-shot in a clean folder and a new agent context.</li>
+<li>Paste the shared master prompt plus exactly one delta.</li>
+<li>Use Max reasoning for the main showcase set. Record model build, reasoning level, date, wall time, and token usage.</li>
+<li>Allow the agent to implement and run its own checks. Do not add taste corrections during the benchmark run.</li>
+<li>Archive the first runnable output, full conversation, file tree, console log, and a fixed set of screenshots before changing anything.</li>
+<li>For Rome and Sagrada, rerun the identical prompt at all six reasoning levels; do not silently repair failed levels.</li>
+</ol>
+<h3 id="turn-a-benchmark-output-into-a-production-result">Turn a benchmark output into a production result<a class="headerlink" href="#turn-a-benchmark-output-into-a-production-result" title="Permanent link">&para;</a></h3>
+<p>Use short, evidence-driven correction passes instead of another giant prompt:</p>
+<pre><code class="language-text">Audit the running experience against the acceptance tests in the original specification. Do not redesign it yet. Return a table of observed failures with screenshot/state evidence, severity, likely root cause, and the smallest coherent fix. Separate visual composition, geometry, motion, interaction, factual accuracy, and performance.
+</code></pre>
+<p>Then fix one failure class per turn:</p>
+<ol>
+<li><strong>Composition pass:</strong> camera, scale, foreground/midground/background, empty areas, silhouette.</li>
+<li><strong>World pass:</strong> missing context, density, landmarks, material variation, spatial coherence.</li>
+<li><strong>Motion pass:</strong> phase variation, path realism, contacts, acceleration, response to controls.</li>
+<li><strong>Interaction pass:</strong> meaningful controls, reset, presets, input conflicts, accessibility.</li>
+<li><strong>Performance pass:</strong> draw calls, shader cost, particle pools, LOD, memory disposal, DPR.</li>
+<li><strong>Accuracy pass:</strong> validate geography, biology, physics, or history with authoritative sources.</li>
+</ol>
+<h3 id="a-stronger-evaluation-rubric">A stronger evaluation rubric<a class="headerlink" href="#a-stronger-evaluation-rubric" title="Permanent link">&para;</a></h3>
+<p>Score each 0–5:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First-frame premise</td>
+<td>Can a new viewer name the experience in three seconds?</td>
+</tr>
+<tr>
+<td>Composition</td>
+<td>Is there a deliberate foreground, middle, background, and scale cue?</td>
+</tr>
+<tr>
+<td>World completeness</td>
+<td>Does the environment continue coherently beyond the hero object?</td>
+</tr>
+<tr>
+<td>Landmark/subject fidelity</td>
+<td>Are silhouette, placement, proportions, and essential features recognizable?</td>
+</tr>
+<tr>
+<td>Motion quality</td>
+<td>Are multiple systems varied, weighty, and causally plausible?</td>
+</tr>
+<tr>
+<td>Interaction consequence</td>
+<td>Does every control produce a visible, reversible world change?</td>
+</tr>
+<tr>
+<td>Camera design</td>
+<td>Do presets reveal distinct information without clipping or disorientation?</td>
+</tr>
+<tr>
+<td>UI taste</td>
+<td>Is the interface restrained, legible, subject-specific, and non-obstructive?</td>
+</tr>
+<tr>
+<td>Runtime integrity</td>
+<td>No blank states, console errors, broken imports, or runaway memory.</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Smooth target hardware behavior with measured draw calls and frame timing.</td>
+</tr>
+<tr>
+<td>Factual integrity</td>
+<td>Claims and spatial/scientific details are sourced or explicitly approximate.</td>
+</tr>
+</tbody>
+</table>
+<p>The deepest improvement over Peter’s informal comparison would be a <strong>paired evaluation harness</strong>: fixed viewport, deterministic seed where possible, identical browser/GPU, automatic first-frame capture, scripted camera path, interaction replay, frame-time trace, DOM/console capture, and a human blind-rating sheet. Without that, reasoning-level conclusions confound model effort with sampling variance and aesthetic preference.</p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<ul>
+<li>No prompt text is visible in the video. “Repo-correlated” means strong correspondence, not proof of verbatim use.</li>
+<li>The repository snapshot predates the video and lacks several demonstrated titles, including Neuschwanstein, Formula 1, X-Ray Cabinet, Inside a Leaf, Humpback Whale, Swiss Alpine Trail, Westminster, Washington, Sagrada Família, and the exact Van Gogh multi-painting town.</li>
+<li>The visual pass samples every five seconds and uses targeted stills; it may omit transient states shorter than five seconds.</li>
+<li>The video demonstrates appearance and interaction briefly. It does not expose source code, file architecture, exact model settings, token counts, seeds, deployment configuration, or complete correction history.</li>
+<li>“One-shot” and run-time claims are Peter’s narration. The artifacts and full Arena execution logs were not independently available.</li>
+<li>Historical, geographic, biological, and physical correctness was not verified here. The purpose of this package is prompt/workflow reconstruction.</li>
+</ul>
+<h2 id="provenance-files">Provenance files<a class="headerlink" href="#provenance-files" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>DEVELOPMENT-JOURNEY.html</code> records the chronological reconstruction, prompt evolution, repository role, failures, and Stonehenge/Cappadocia revisions.</li>
+<li><code>source-manifest.json</code> records sources, representations, hashes, and coverage.</li>
+<li><code>artifact-manifest.json</code> records artifact roles and dependencies.</li>
+<li><code>source_video.info.json</code> preserves YouTube metadata.</li>
+<li><code>reference_repo/</code> preserves the referenced prompt repository at the recorded commit.</li>
+<li><code>evidence_frames/</code> contains the visual evidence used for this analysis.</li>
+</ul></article>
+  </main>
+  <footer>Generated from the local video, timestamped transcript, targeted frames, and the referenced prompt repository. No remote scripts or trackers.</footer>
+</body>
+</html>

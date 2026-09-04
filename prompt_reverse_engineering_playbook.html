@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>From pixels to prompt systems — a defensible reverse-engineering playbook</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg:#f1eee5;
+      --paper:#fbf9f2;
+      --ink:#141713;
+      --muted:#64675e;
+      --line:#c8c5b9;
+      --green:#175e4b;
+      --green-soft:#dce9df;
+      --gold:#a16b12;
+      --gold-soft:#f2e5c7;
+      --red:#8e3f36;
+      --red-soft:#efdcd6;
+      --blue:#315f79;
+      --blue-soft:#dce8ed;
+      --mono:#e7e4da;
+      --shadow:0 18px 50px rgba(27,34,27,.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#111512;
+        --paper:#181d19;
+        --ink:#edf0e9;
+        --muted:#a8afa5;
+        --line:#39423a;
+        --green:#79d4b2;
+        --green-soft:#1c382d;
+        --gold:#efbd66;
+        --gold-soft:#3c301d;
+        --red:#f0a296;
+        --red-soft:#422824;
+        --blue:#91c6df;
+        --blue-soft:#20333c;
+        --mono:#222923;
+        --shadow:none;
+      }
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+    a { color:var(--green); text-underline-offset:.18em; }
+    a:hover { text-decoration-thickness:2px; }
+    header, main, footer { width:min(82rem,calc(100% - 2rem)); margin-inline:auto; }
+    header { padding:4.5rem 0 2.6rem; border-bottom:1px solid var(--line); }
+    .eyebrow { margin:0 0 1rem; color:var(--green); font-weight:750; text-transform:uppercase; letter-spacing:.12em; font-size:.75rem; }
+    h1 { margin:0; max-width:13ch; font:800 clamp(3.2rem,8vw,7.7rem)/.89 Georgia,serif; letter-spacing:-.065em; }
+    .deck { max-width:58rem; margin:1.5rem 0 0; color:var(--muted); font-size:clamp(1.08rem,2vw,1.35rem); }
+    .hero-facts { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:2.4rem; background:var(--line); border:1px solid var(--line); }
+    .hero-facts div { background:var(--paper); padding:1.15rem; }
+    .hero-facts strong { display:block; font:750 1.55rem/1.1 Georgia,serif; }
+    .hero-facts span { color:var(--muted); font-size:.88rem; }
+    main { display:grid; grid-template-columns:16rem minmax(0,1fr); gap:3.25rem; padding:2.75rem 0 5rem; }
+    nav { position:sticky; top:1rem; align-self:start; background:var(--paper); border:1px solid var(--line); padding:1.1rem; box-shadow:var(--shadow); }
+    nav strong { display:block; margin-bottom:.65rem; }
+    nav a { display:block; padding:.28rem 0; font-size:.9rem; }
+    article { min-width:0; }
+    section { scroll-margin-top:1.2rem; }
+    h2 { margin:4rem 0 1.2rem; padding-top:1.3rem; border-top:1px solid var(--line); font:750 clamp(2rem,5vw,3.7rem)/1 Georgia,serif; letter-spacing:-.035em; }
+    h3 { margin:2.2rem 0 .65rem; font:750 1.35rem/1.15 Georgia,serif; }
+    h4 { margin:1.2rem 0 .35rem; }
+    p { max-width:74ch; }
+    ul,ol { max-width:76ch; padding-left:1.35rem; }
+    li + li { margin-top:.5rem; }
+    .lede { font-size:1.16rem; max-width:72ch; }
+    .boundary, .callout { padding:1.15rem 1.3rem; background:var(--paper); border-left:.34rem solid var(--green); margin:1.4rem 0; }
+    .boundary strong, .callout strong { font-weight:800; }
+    .warning { border-left-color:var(--gold); }
+    .refusal { border-left-color:var(--red); }
+    .method { border-left-color:var(--blue); }
+    .label { display:inline-block; padding:.17rem .5rem; margin:.1rem .2rem .1rem 0; border-radius:999px; background:var(--green-soft); color:var(--green); font-size:.77rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+    .label.observed { background:var(--blue-soft); color:var(--blue); }
+    .label.inferred { background:var(--gold-soft); color:var(--gold); }
+    .label.unknown { background:var(--red-soft); color:var(--red); }
+    .grid-2, .grid-3 { display:grid; gap:1rem; margin:1.2rem 0; }
+    .grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .grid-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { background:var(--paper); border:1px solid var(--line); padding:1.15rem; box-shadow:var(--shadow); }
+    .card h3, .card h4 { margin-top:0; }
+    .card p:last-child { margin-bottom:0; }
+    .big-number { font:800 2.2rem/1 Georgia,serif; color:var(--green); }
+    .process { counter-reset:step; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1.5rem 0; }
+    .process article { counter-increment:step; background:var(--paper); border:1px solid var(--line); padding:1.05rem; }
+    .process article::before { content:"0" counter(step); display:block; color:var(--green); font-weight:850; letter-spacing:.08em; }
+    .process h3 { margin:.45rem 0; }
+    figure { margin:1.3rem 0; }
+    figure img { display:block; width:100%; height:auto; border:1px solid var(--line); background:#111; }
+    figcaption { color:var(--muted); font-size:.87rem; padding-top:.45rem; }
+    .filmstrip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
+    table { width:100%; border-collapse:collapse; margin:1.2rem 0 1.6rem; font-size:.94rem; }
+    th,td { border:1px solid var(--line); padding:.68rem .72rem; vertical-align:top; text-align:left; }
+    th { background:var(--green-soft); color:var(--ink); }
+    tr:nth-child(even) td { background:color-mix(in srgb,var(--paper) 76%,transparent); }
+    .table-wrap { overflow:auto; }
+    code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+    code { background:var(--mono); padding:.08rem .28rem; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; padding:1.1rem; border:1px solid var(--line); background:var(--paper); line-height:1.5; }
+    .equation { font:750 clamp(1.25rem,3vw,2rem)/1.35 Georgia,serif; padding:1.2rem; background:var(--green-soft); border:1px solid var(--line); }
+    .small { color:var(--muted); font-size:.87rem; }
+    .no-break { break-inside:avoid; }
+    footer { border-top:1px solid var(--line); padding:1.5rem 0 3rem; color:var(--muted); }
+    @media (max-width:980px) {
+      main { grid-template-columns:1fr; }
+      nav { position:static; columns:2; }
+      .hero-facts { grid-template-columns:repeat(2,1fr); }
+      .process, .grid-3 { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:640px) {
+      header { padding-top:3rem; }
+      .hero-facts, .process, .grid-2, .grid-3, .filmstrip { grid-template-columns:1fr; }
+      nav { columns:1; }
+      table { min-width:44rem; }
+      h1 { font-size:3.25rem; }
+    }
+    @media print {
+      :root { color-scheme:light; --bg:#fff; --paper:#fff; --ink:#000; --muted:#444; --line:#aaa; }
+      nav { display:none; }
+      main { display:block; width:100%; }
+      header,footer { width:100%; }
+      .card { box-shadow:none; }
+      a { color:#000; }
+      h2 { break-after:avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Evidence-grounded methods note · 03 September 2026</p>
+    <h1>From pixels to prompt systems</h1>
+    <p class="deck">How I reverse-engineered the GPT-6 Astra 3D demonstrations from video evidence, what reusable prompt architecture is genuinely supported, and the questions that matter before treating any spectacular generation as a reproducible system.</p>
+    <div class="hero-facts" aria-label="Evidence summary">
+      <div><strong>33:49</strong><span>complete video runtime covered</span></div>
+      <div><strong>37</strong><span>distinct projects inventoried</span></div>
+      <div><strong>63</strong><span>public repository prompts analyzed</span></div>
+      <div><strong>18</strong><span>video scenes strongly repo-correlated</span></div>
+    </div>
+  </header>
+
+  <main>
+    <nav aria-label="Page navigation">
+      <strong>Navigate</strong>
+      <a href="#answer">The short answer</a>
+      <a href="#watching">What “watching” meant</a>
+      <a href="#method">Reverse-engineering method</a>
+      <a href="#workflow">Workflow reconstruction</a>
+      <a href="#patterns">Supported meta-patterns</a>
+      <a href="#not-supported">What is not supported</a>
+      <a href="#compiler">New-scenario compiler</a>
+      <a href="#unknowns">Unknown unknowns</a>
+      <a href="#protocol">Recommended protocol</a>
+      <a href="#provenance">Provenance</a>
+    </nav>
+
+    <article>
+      <section id="answer">
+        <h2>The short answer</h2>
+        <p class="lede">I did not recover hidden prompt text from pixels. That is impossible here because the video never displays the prompts. I reconstructed a <em>minimum sufficient specification</em> for each visible result, then checked that specification against Peter Gostev’s narration and his public prompt repository. The strongest product of this process is therefore not an alleged verbatim prompt; it is a reusable prompt architecture with explicit confidence labels.</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <span class="label observed">Directly supported</span>
+            <h3>What the output did</h3>
+            <p>Scene composition, camera behavior, UI, visible interactions, motion systems, transitions, scale cues, defects, and what Peter explicitly said about one-shot versus iterative generation.</p>
+          </div>
+          <div class="card">
+            <span class="label inferred">Analyst reconstruction</span>
+            <h3>What a prompt would need to request</h3>
+            <p>A compact set of requirements likely to produce the observed behavior: world scope, opening frame, systems, camera grammar, controls, constraints, performance strategy, and acceptance tests.</p>
+          </div>
+          <div class="card">
+            <span class="label">Repo-correlated</span>
+            <h3>What public text corroborates</h3>
+            <p>Eighteen scenes strongly match entries in the public collection by title, features, camera, controls, and technical requirements. Correspondence is strong; verbatim use is not proven.</p>
+          </div>
+          <div class="card">
+            <span class="label unknown">Unknown</span>
+            <h3>What cannot be recovered</h3>
+            <p>The exact submitted wording, hidden system instructions, starting files, tool state, intermediate conversations, rejected attempts, exact runtime settings, or whether a public prompt was edited before use.</p>
+          </div>
+        </div>
+
+        <div class="boundary refusal">
+          <strong>Critical boundary.</strong> Reverse engineering an output is an inverse problem with many solutions. Several prompts and workflows could generate similar visible behavior. The reconstruction is useful if it predicts and reproduces properties of the result; it is not proof of the historical input.
+        </div>
+      </section>
+
+      <section id="watching">
+        <h2>What “watching” the video meant</h2>
+        <p>I used the full audiovisual source, the full timestamped transcript, a complete timeline sampling pass at five-second intervals, and targeted full-resolution frames around every project transition and important interaction. This gave substantial visual and temporal coverage across the complete runtime. It was not a claim that every one of the roughly 101,000 source frames received separate human inspection.</p>
+
+        <div class="filmstrip" aria-label="Representative evidence frames">
+          <figure>
+            <img src="evidence_frames/targeted/t_0020.png" alt="Voxel London opening shown near twenty seconds in the video" loading="lazy">
+            <figcaption>00:20 — London Through Time: multiple eras, one navigable spatial system.</figcaption>
+          </figure>
+          <figure>
+            <img src="evidence_frames/targeted/t_1105.png" alt="A Manhattan generation shown around eighteen minutes twenty-five seconds" loading="lazy">
+            <figcaption>18:25 — Manhattan: whole-world silhouette plus closer animated detail.</figcaption>
+          </figure>
+          <figure>
+            <img src="evidence_frames/targeted/t_1725.png" alt="Reasoning-level comparison shown near twenty-eight minutes forty-five seconds" loading="lazy">
+            <figcaption>28:45 — comparison pass: higher reasoning was not monotonically better.</figcaption>
+          </figure>
+        </div>
+
+        <h3>Four synchronized evidence channels</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Channel</th><th>What it can establish</th><th>What it cannot establish</th></tr></thead>
+            <tbody>
+              <tr><td>Rendered video</td><td>Visible state, behavior, composition, interaction, defects, UI, transitions, and apparent performance.</td><td>Hidden code, prompt text, off-camera attempts, or factual correctness.</td></tr>
+              <tr><td>Narration and transcript</td><td>Peter’s descriptions of effort, reasoning level, one-shot status, evaluation, and uncertainty.</td><td>Independent verification of his claims or details he does not state.</td></tr>
+              <tr><td>Public prompt repository</td><td>Actual prompt-writing patterns and strong correspondences to many scenes.</td><td>That any specific repository text was pasted verbatim into the demonstrated run.</td></tr>
+              <tr><td>Cross-scene comparison</td><td>Repeated structures that survive changes in subject matter and likely represent a reusable design grammar.</td><td>Causal proof that any one phrase or section produced the improvement.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="method">
+        <h2>The reverse-engineering method</h2>
+        <p>The method converts observable effects into candidate requirements, while preserving uncertainty. It resembles system identification more than transcription.</p>
+
+        <div class="process">
+          <article><h3>Acquire</h3><p>Preserve the original video, metadata, transcript, and authoritative prompt repository with hashes and timestamps.</p></article>
+          <article><h3>Segment</h3><p>Split the timeline by project and generation regime: multi-hour iterative builds, one-shot Max runs, reasoning-level comparisons, and final gallery items.</p></article>
+          <article><h3>Encode</h3><p>Record each scene using one observation schema instead of free-form impressions.</p></article>
+          <article><h3>Triangulate</h3><p>Align what is visible with what Peter says and what the repository specifies. Disagreement remains visible.</p></article>
+          <article><h3>Invert</h3><p>Translate each output property into the least speculative prompt or workflow requirement that could plausibly cause it.</p></article>
+          <article><h3>Falsify</h3><p>List failure modes, unknowns, and acceptance tests. A reconstruction without a way to fail is merely fan fiction.</p></article>
+        </div>
+
+        <h3>The observation schema</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Observed dimension</th><th>Questions asked while inspecting</th><th>Candidate prompt section</th></tr></thead>
+            <tbody>
+              <tr><td>Opening composition</td><td>What is visible in the first useful frame? What makes the premise legible without explanation?</td><td><strong>First-frame contract</strong></td></tr>
+              <tr><td>World extent</td><td>Is this a hero object, a diorama, or a continuous world? What remains visible at wide and close scales?</td><td><strong>Scope and nested scale</strong></td></tr>
+              <tr><td>Spatial semantics</td><td>Which landmarks, zones, paths, layers, and relative placements make the place recognizable?</td><td><strong>World model and layout</strong></td></tr>
+              <tr><td>Motion</td><td>Which independent systems move? Are they periodic, agentic, reactive, or merely decorative?</td><td><strong>Behavior systems</strong></td></tr>
+              <tr><td>Interaction</td><td>What can the viewer do? Does every control create an obvious state change?</td><td><strong>Interaction grammar</strong></td></tr>
+              <tr><td>Camera</td><td>What is the default view? Which presets expose different scales or causal mechanisms?</td><td><strong>Camera choreography</strong></td></tr>
+              <tr><td>Art direction</td><td>What palette, material hierarchy, typography, light, atmosphere, and density create the taste?</td><td><strong>Editorial system</strong></td></tr>
+              <tr><td>Engineering</td><td>What likely needs instancing, batching, LOD, procedural textures, pooling, or quality degradation?</td><td><strong>Performance architecture</strong></td></tr>
+              <tr><td>Failures</td><td>What is visibly wrong—floating bridges, rotated landmarks, weak motion, collisions, incomplete geography?</td><td><strong>Negative constraints and tests</strong></td></tr>
+              <tr><td>Evidence status</td><td>Was the detail seen, narrated, repo-correlated, inferred, or unknown?</td><td><strong>Confidence ledger</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>A concrete inversion example</h3>
+        <p>In the Manhattan segment, the visible result shows the entire island as a coherent silhouette, recognizable density zones, active rivers and traffic, and the ability to approach closer detail. The corresponding public prompt independently specifies the whole island, continuous zoom, correct macro-geography, landmark silhouettes, moving systems, nested LOD, camera presets, and a degradation order. The defensible inference is therefore not “Peter must have used these exact words.” It is: <strong>a prompt seeking this result should explicitly preserve whole-island identity across scale while assigning separate performance strategies to far, middle, and near detail.</strong></p>
+
+        <div class="callout method">
+          <strong>The compression test.</strong> If removing a reconstructed requirement would still leave the visible result essentially unchanged, that requirement is probably decorative. If removing it permits a known collapse—generic rectangular city, static fish, dashboard-heavy UI, one detailed object on empty ground—it belongs in the minimum specification.
+        </div>
+      </section>
+
+      <section id="workflow">
+        <h2>How the workflows were reconstructed</h2>
+        <p>The video supports coarse workflow classes, not exact command-by-command histories. Peter explicitly distinguishes several-generation and multi-hour work from the one-shot gauntlet.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Observed regime</th><th>Direct video evidence</th><th>What may be inferred</th><th>What remains unknown</th></tr></thead>
+            <tbody>
+              <tr><td>London Through Time</td><td>Described as ambitious, “several generations,” not a quick one-shot; 00:19–01:38.</td><td>A staged workflow separating data/era representation, navigation, rendering, and refinement is more plausible than one monolithic pass.</td><td>Exact number of generations, prompts, code edits, and checkpoints.</td></tr>
+              <tr><td>D-Day / Omaha</td><td>Ultra reasoning, many hours, combination of Blender asset design and a Three.js environment; 01:39–03:24.</td><td>Asset production and runtime integration were distinct workstreams; visual and behavioral tests were probably iterative.</td><td>Which assets were generated, imported, hand-fixed, or reused; exact tool chain and licensing.</td></tr>
+              <tr><td>Open-world game</td><td>Prompt requested “10-hour gameplay”; generation ran for hours or overnight; Peter had not played ten hours; 03:25–05:35.</td><td>The output should be treated as a promising prototype until long-run playability, state progression, and stability are tested.</td><td>Whether it contains ten hours of unique content, persistence, completion logic, or robust enemy behavior.</td></tr>
+              <tr><td>One-shot gauntlet</td><td>Max reasoning, roughly 20–40 minutes per run, with zero cherry-picking claimed; begins 05:36.</td><td>These are useful capability probes because prompts and run regime were comparatively consistent.</td><td>Variance across repeated runs, hidden scaffold, exact settings, and independent verification of zero selection.</td></tr>
+              <tr><td>Reasoning ladder</td><td>Low through Ultra shown for Rome and Sagrada Família; richness generally rises, but Max/Ultra are not always preferred; 23:05–28:50.</td><td>Use adaptive escalation based on observed deficits rather than defaulting to the largest budget.</td><td>Exact token counts, dollar cost, latency distribution, and repeatability.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="boundary warning">
+          <strong>Workflow inference rule.</strong> A visible feature can justify a requirement or test. It cannot justify invented intermediate steps. The staged workflows in the replication guide are recommendations for reproducing the result, not claims about Peter’s exact hidden sequence.
+        </div>
+      </section>
+
+      <section id="patterns">
+        <h2>Supported meta-patterns and best practices</h2>
+        <p>The public repository contains 63 prompts. A mechanical keyword scan provides conservative lower bounds for recurring structures. It does not prove causality, and it can miss semantically equivalent wording.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Recurring structure</th><th>Prompts containing it</th><th>What this supports</th></tr></thead>
+            <tbody>
+              <tr><td>Three.js named</td><td>62 / 63</td><td>The collection is primarily a web-runtime engineering benchmark, not generic text-to-image prompting.</td></tr>
+              <tr><td>Instancing language</td><td>58 / 63</td><td>Perceived density is paired with an explicit draw-call strategy.</td></tr>
+              <tr><td>Visible motion or dynamism</td><td>51 / 63</td><td>“Alive” is usually decomposed into concrete moving subsystems.</td></tr>
+              <tr><td>Performance target or device constraint</td><td>50 / 63</td><td>Performance is part of the requested product, not cleanup after generation.</td></tr>
+              <tr><td>Camera presets or modes</td><td>49 / 63</td><td>The camera is treated as an explanatory and dramatic instrument.</td></tr>
+              <tr><td>Compact or deliberately minimal UI</td><td>49 / 63</td><td>Controls should reveal the world without visually replacing it.</td></tr>
+              <tr><td>Procedural generation</td><td>48 / 63</td><td>Large scope is achieved through systems, not individually authored objects.</td></tr>
+              <tr><td>Explicit negative constraints</td><td>48 / 63</td><td>The prompts name known collapse modes, not only desired adjectives.</td></tr>
+              <tr><td>LOD or level-of-detail language</td><td>39 / 63</td><td>Many prompts plan different representations for different distances.</td></tr>
+              <tr><td>Explicit first-frame instruction</td><td>36 / 63</td><td>The initial composition often functions as a visual acceptance test.</td></tr>
+              <tr><td>Explicit acceptance or guardrail wording</td><td>24 / 63</td><td>A substantial subset ends with non-negotiable outcome criteria.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">Prompt lengths range from 81 to 1,825 words, with a median of 484. This describes the collection; it does not show that longer prompts are better.</p>
+
+        <div class="grid-2">
+          <div class="card no-break">
+            <h3>1. Specify one impossible but coherent thesis</h3>
+            <p>The strongest prompts have a single legible premise: one riverbank across two thousand years, an entire island through continuous zoom, a painting becoming a traversable world. Ambition is concentrated rather than scattered.</p>
+            <p><strong>Use:</strong> write one sentence that tells the viewer what cannot normally be seen but should become immediately understandable.</p>
+          </div>
+          <div class="card no-break">
+            <h3>2. Make the first frame an executable contract</h3>
+            <p>Name the camera position, scale, light, principal actors, active event, and information hierarchy visible before interaction.</p>
+            <p><strong>Use:</strong> require a cold-open state that can be judged from one screenshot. Avoid title screens and explanatory reveals unless they are the product.</p>
+          </div>
+          <div class="card no-break">
+            <h3>3. Build a world, not a hero object</h3>
+            <p>Repeated prompts specify connective tissue: paths, traffic, crowds, vegetation, water, weather, background infrastructure, and scale cues. This is what prevents a centerpiece from floating in an empty diorama.</p>
+            <p><strong>Use:</strong> define center, surrounding zones, connections, and horizon. State which relationships must remain recognizable.</p>
+          </div>
+          <div class="card no-break">
+            <h3>4. Treat scale as multiple representations</h3>
+            <p>Wide-view silhouette, mid-range structure, and near-view micro-detail are different engineering problems. The repository repeatedly combines procedural generation, instancing, merged geometry, and LOD.</p>
+            <p><strong>Use:</strong> specify what must survive at each distance and what may be simplified first.</p>
+          </div>
+          <div class="card no-break">
+            <h3>5. Decompose “alive” into independent systems</h3>
+            <p>Water, weather, crowds, vehicles, fauna, smoke, cloth, lights, and machinery are named separately. Peter repeatedly notices when otherwise beautiful scenes lack dynamism.</p>
+            <p><strong>Use:</strong> request three to five asynchronous systems with different rhythms and at least one causal interaction. “Add animation” is too weak.</p>
+          </div>
+          <div class="card no-break">
+            <h3>6. Use camera presets as explanations</h3>
+            <p>A good preset is not a decorative angle. It reveals a scale, mechanism, comparison, or story beat: whole-world hero, street dive, cross-section, process close-up, or before/after alignment.</p>
+            <p><strong>Use:</strong> give every preset a question it answers.</p>
+          </div>
+          <div class="card no-break">
+            <h3>7. Demand controls with visible consequences</h3>
+            <p>Time sliders, era selectors, density controls, cross-sections, lighting, and process triggers work because the user can form and test a mental model.</p>
+            <p><strong>Use:</strong> limit the primary controls and specify the state transition each must produce. Hide implementation diagnostics.</p>
+          </div>
+          <div class="card no-break">
+            <h3>8. Art-direct the interface with the scene</h3>
+            <p>The prompts often specify typography, palette, materials, translucency, whitespace, and compact controls. Peter explicitly praises improved UI taste around 07:32–07:55 and the Swiss trail around 20:37–21:21.</p>
+            <p><strong>Use:</strong> define an editorial system and one accent; prevent generic dashboard chrome from dominating the visual world.</p>
+          </div>
+          <div class="card no-break">
+            <h3>9. Name the collapse modes</h3>
+            <p>“Do not create a generic rectangular city” is more operational than “make it accurate.” Negative constraints encode failure history.</p>
+            <p><strong>Use:</strong> list three to six recognizable failures: sparse stage, identical motion, wrong silhouette, frozen agents, occluded hero, or UI-first opening.</p>
+          </div>
+          <div class="card no-break">
+            <h3>10. Design graceful degradation</h3>
+            <p>Many prompts say what a quality selector may reduce before touching the core spectacle. That priority ordering protects identity under performance pressure.</p>
+            <p><strong>Use:</strong> drop distant particles, reflection quality, and crowd density before landmarks, interaction, or hero motion.</p>
+          </div>
+          <div class="card no-break">
+            <h3>11. Separate benchmark mode from production mode</h3>
+            <p>A one-shot run tests coordination under a fixed constraint. A production result needs iteration, factual review, modularity, cross-device testing, accessibility, and failure recovery.</p>
+            <p><strong>Use:</strong> preserve the one-shot output as baseline evidence, then improve it with an explicit defect ledger.</p>
+          </div>
+          <div class="card no-break">
+            <h3>12. Escalate reasoning only when the defect warrants it</h3>
+            <p>In the video, higher levels generally add richness, but Max or Ultra can have worse color coordination or no clear advantage. More compute is not a monotonic taste function.</p>
+            <p><strong>Use:</strong> prototype composition and controls cheaply; escalate for coordination, architecture, and stubborn defects; compare against the cheaper baseline.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="not-supported">
+        <h2>What the evidence does not support</h2>
+        <p>This is the section that keeps a pattern catalog from turning into mythology.</p>
+        <div class="grid-2">
+          <div class="card"><h3>Longer prompts are better</h3><p><span class="label unknown">Not established</span> Length covaries with complexity. No controlled length ablation was shown.</p></div>
+          <div class="card"><h3>“Billion-piece” is a magic phrase</h3><p><span class="label unknown">Not established</span> In the repository it is rhetorical shorthand for perceived density, immediately paired with instancing and LOD. Literal billion-object geometry would be the wrong interpretation.</p></div>
+          <div class="card"><h3>Repository text equals submitted text</h3><p><span class="label unknown">Not established</span> Prompt text never appears in the video. Strong scene correspondence is not provenance proof.</p></div>
+          <div class="card"><h3>Max or Ultra is always best</h3><p><span class="label observed">Contradicted</span> The presenter sometimes prefers lower levels and questions Ultra’s value at 25:51–28:39.</p></div>
+          <div class="card"><h3>One-shot means reproducible</h3><p><span class="label unknown">Not established</span> A single sample says nothing about run-to-run variance. Repeat trials were not shown.</p></div>
+          <div class="card"><h3>Visual plausibility means accuracy</h3><p><span class="label observed">Explicitly uncertain</span> Peter repeatedly says he does not know whether geography, biology, or historical details are accurate.</p></div>
+          <div class="card"><h3>The prompt is the whole causal story</h3><p><span class="label unknown">Not established</span> System instructions, scaffolds, tools, dependencies, model build, files, and hidden iterative state are not visible.</p></div>
+          <div class="card"><h3>More animated objects mean better simulation</h3><p><span class="label inferred">Too weak</span> Motion can be decorative. Causal coupling, collision discipline, phase diversity, and responsiveness are separate qualities.</p></div>
+          <div class="card"><h3>The ten-hour game contains ten hours</h3><p><span class="label observed">Not verified</span> The task asked for that duration; Peter says he had not played it for ten hours.</p></div>
+          <div class="card"><h3>These patterns generalize to every 3D task</h3><p><span class="label unknown">Not established</span> The corpus is one creator’s web-3D benchmark style. CAD, scientific simulation, VR, games, and training systems have different success criteria.</p></div>
+        </div>
+      </section>
+
+      <section id="compiler">
+        <h2>A new-scenario prompt compiler</h2>
+        <p>The following is an analyst-derived design instrument, not a prompt shown in the video. It distills only the supported recurring structures and makes the missing decisions explicit.</p>
+
+        <div class="equation">
+          New 3D scenario = coherent premise + first-frame proof + spatial world model + independent behaviors + camera grammar + consequential controls + art direction + collapse constraints + performance priorities + acceptance tests
+        </div>
+
+        <h3>Design sequence</h3>
+        <ol>
+          <li><strong>Declare the job.</strong> Is this spectacle, explanation, exploration, rehearsal, simulation, or benchmark? Choose one primary job.</li>
+          <li><strong>Define the truth standard.</strong> Decide whether visual plausibility is sufficient or whether geometry, chronology, mechanics, and labels need authoritative references.</li>
+          <li><strong>Write the impossible thesis.</strong> Combine one place or system with one transformation, hidden mechanism, scale jump, or counterfactual that remains coherent.</li>
+          <li><strong>Storyboard the first frame.</strong> Specify camera, composition, light, active event, foreground/midground/background, and what proves the thesis instantly.</li>
+          <li><strong>Model the world.</strong> Name zones, landmarks, paths, layers, population, background, and invariants. Avoid unordered object lists.</li>
+          <li><strong>Model time and behavior.</strong> Give three to five systems distinct rhythms and at least one causal or reactive link.</li>
+          <li><strong>Give the camera a curriculum.</strong> Each preset should reveal a scale, mechanism, contrast, or consequence.</li>
+          <li><strong>Keep interaction legible.</strong> Use a small number of controls whose effects are visible within seconds.</li>
+          <li><strong>Budget the renderer.</strong> Set target device, frame-time budget, LOD tiers, instancing strategy, particle limits, and degradation order.</li>
+          <li><strong>Write failure tests.</strong> Convert likely collapse modes into screenshot, interaction, correctness, and performance checks.</li>
+        </ol>
+
+        <h3>Fillable master specification</h3>
+        <pre aria-label="Fillable 3D prompt template">OBJECTIVE
+Create a [runtime/engine] experience whose single coherent premise is:
+[ONE SENTENCE: place/system + impossible but understandable transformation].
+Primary user job: [spectacle / explanation / exploration / rehearsal / simulation].
+Truth standard: [plausible / reference-grounded / quantitatively validated].
+
+FIRST-FRAME CONTRACT
+Open immediately at [camera position and lens/scale] during [light/weather/time].
+The viewer must see [foreground], [midground], [background], and [active event].
+This one frame proves the premise because [observable criterion].
+No [title screen / loading reveal / dashboard-first opening / other collapse].
+
+WORLD MODEL
+Anchor: [central subject].
+Zones: [3–6 spatial or semantic regions].
+Connections: [roads, flows, sightlines, ecological or causal links].
+Invariants: [silhouettes, relative positions, scale relationships, facts].
+Nested detail: wide [ ], middle [ ], near [ ].
+
+BEHAVIOR SYSTEMS
+1. [system] moves/reacts by [rule and rhythm].
+2. [system] moves/reacts by [rule and rhythm].
+3. [system] moves/reacts by [rule and rhythm].
+Causal interaction: when [state/event], [visible consequence].
+Avoid synchronized loops, intersections without collision logic, and frozen agents.
+
+CAMERA AND INTERACTION
+Default camera: [hero composition].
+Presets: [whole-system], [human-scale], [mechanism], [comparison/cross-section].
+Primary controls: [maximum 3–5], each causing [explicit visible state change].
+Reset always restores [known valid state]. Keyboard and reduced-motion paths required.
+
+ART DIRECTION
+Palette [ ]; materials [ ]; typography [ ]; atmosphere [ ]; density [ ].
+The interface is [editorial description], subordinate to the world, with one accent.
+
+ENGINEERING AND PERFORMANCE
+Target: [device/browser/resolution], [FPS or frame-time], [memory ceiling].
+Use procedural generation for [ ], instancing for [ ], pooling for [ ], LOD for [ ].
+Quality degradation order: reduce [1], then [2], then [3]; never remove [identity-critical features].
+Pin dependencies; define offline/network policy; surface load or runtime failure.
+
+ACCEPTANCE TESTS
+- Screenshot: first frame visibly contains [criteria].
+- World: [spatial invariants] are preserved.
+- Motion: at least [N] independent systems are visible and phase-diverse.
+- Interaction: each control causes [testable result] and reset recovers.
+- Truth: validate [sampled facts/mechanics] against [named source].
+- Performance: sustain [target] for [duration] on [hardware].
+- Accessibility: keyboard path, contrast, labels, reduced motion.
+
+NEGATIVE CONSTRAINTS
+Do not collapse into [generic diorama], [single hero object], [static tableau],
+[UI-heavy dashboard], [incorrect silhouette], or [subject-specific failure].
+
+OUTPUT
+Deliver [single file / modular application], plus a brief manifest of assumptions,
+dependencies, known limitations, and which acceptance tests passed.</pre>
+
+        <h3>How to invent a genuinely new scenario without copying the corpus</h3>
+        <p>Choose one element from each column, then reject combinations that lack a coherent causal story. The method is analyst-derived; the categories are not claimed as Peter’s own framework.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Anchor</th><th>Revelatory operation</th><th>Time structure</th><th>User agency</th><th>Truth regime</th></tr></thead>
+            <tbody>
+              <tr><td>Place, organism, machine, network, material, event</td><td>Cross-section, scale dive, reconstruction, counterfactual, flow tracing, synchronized comparison</td><td>Instant event, cycle, deep-time slider, branching future, reversible process</td><td>Explore, steer, perturb, compare, diagnose, assemble</td><td>Poetic, plausible, historically sourced, scientifically constrained, operationally exact</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Selection test:</strong> the combination should produce a visual insight unavailable in a static image. If it only makes a familiar scene prettier, it is not yet a strong interactive 3D premise.</p>
+      </section>
+
+      <section id="unknowns">
+        <h2>Your unknown unknowns—surfaced and addressed</h2>
+        <p>These questions determine whether a generated scene is a striking demo, a repeatable benchmark, or a usable product. “Current answer” distinguishes what the evidence tells us from the default action I recommend.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Question you should ask</th><th>Current answer from this evidence</th><th>Practical resolution</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1. What is the actual reproducible unit: prompt, conversation, scaffold, or repository?</strong></td><td>Unknown. The video exposes results and coarse run classes, not full state.</td><td>Archive model/build, reasoning level, system prompt, full conversation, starting files, tool permissions, dependency lockfile, output, and run log together.</td></tr>
+              <tr><td><strong>2. How stochastic is the result?</strong></td><td>Not measured. One run per one-shot prompt does not estimate reliability.</td><td>Run each candidate at least three times; five for important decisions. Score median and worst case, not only the best frame.</td></tr>
+              <tr><td><strong>3. Is the prompt doing the work, or is hidden scaffolding?</strong></td><td>Unresolved. Public prompts demonstrate detailed specification, but hidden environment effects remain possible.</td><td>Ablate: same prompt in empty project, standard scaffold, and enriched scaffold. Diff capability, breakage, and generated code volume.</td></tr>
+              <tr><td><strong>4. Are public examples contaminating the benchmark?</strong></td><td>Unknown. Public availability does not prove training exposure, but memorization cannot be excluded.</td><td>Create held-out scenarios after the model snapshot, plus compositional variants that preserve difficulty while changing subject and layout.</td></tr>
+              <tr><td><strong>5. Does “zero cherry-picking” eliminate selection bias?</strong></td><td>No. It is Peter’s explicit claim for displayed runs, but prompt selection, prior prompt-design experience, capture timing, and benchmark choice still shape the sample.</td><td>Pre-register prompts and scoring, preserve every run, report failures, and let an independent evaluator reproduce a subset.</td></tr>
+              <tr><td><strong>6. Is the scene correct or merely convincing?</strong></td><td>Mostly unverified. Peter flags uncertainty about D-Day assets, leaf biology, Manhattan, Istanbul, the White House, and other subjects.</td><td>Define authoritative sources before generation. Sample critical geometry, chronology, labels, and behaviors with a domain-specific checklist.</td></tr>
+              <tr><td><strong>7. Is motion physically or causally meaningful?</strong></td><td>Mixed. Visible motion is common, but the video itself notes weak dynamism and shows occasional collisions or simplistic behavior.</td><td>Test causality: perturb wind, density, time, or agent state and verify the expected local and downstream response. Penalize decorative loops.</td></tr>
+              <tr><td><strong>8. Does the experience survive beyond the demo path?</strong></td><td>Unknown. The 10-hour game was not played for ten hours; most scenes receive brief inspection.</td><td>Run a 30–60 minute soak test, random camera/control fuzzing, reset tests, boundary traversal, memory monitoring, and save/restore where relevant.</td></tr>
+              <tr><td><strong>9. How much “quality” is camera and art direction rather than world quality?</strong></td><td>Confounded. A strong hero frame and restrained UI materially shape judgment.</td><td>Score geometry, behavior, interaction, truth, camera, and art direction separately. Re-evaluate all models with one fixed camera path.</td></tr>
+              <tr><td><strong>10. What is the real cost-quality frontier?</strong></td><td>Not available. The video provides rough latency but no exact tokens or dollars; higher reasoning is non-monotonic in taste.</td><td>Log tokens, wall time, retries, tool calls, and cost per accepted run. Compare marginal rubric gain per dollar and minute.</td></tr>
+              <tr><td><strong>11. Which prompt sections actually matter?</strong></td><td>Unknown. Recurrence is not causation.</td><td>Run controlled ablations: remove first-frame contract, negatives, LOD plan, motion decomposition, or camera presets one at a time.</td></tr>
+              <tr><td><strong>12. What requirements conflict?</strong></td><td>The corpus often asks for enormous detail, smooth laptop performance, no external assets, correctness, and rich motion simultaneously.</td><td>State a priority hierarchy. Recommended default: identity and interaction correctness, then stable performance, then close detail, then decorative density.</td></tr>
+              <tr><td><strong>13. What does “smooth on a modern laptop” mean?</strong></td><td>Undefined and non-portable.</td><td>Name hardware, browser, resolution, device-pixel ratio, minimum FPS or frame time, memory ceiling, load time, and test duration.</td></tr>
+              <tr><td><strong>14. Are assets and dependencies legal, traceable, and stable?</strong></td><td>Not established by the video. D-Day explicitly combines Blender assets with Three.js; exact provenance is not shown.</td><td>Require an asset/dependency manifest with origin, license, transformation, version, hash, network requirement, and attribution.</td></tr>
+              <tr><td><strong>15. Is generated code secure?</strong></td><td>Not evaluated. A visually successful page can still load mutable CDNs, expose secrets, or contain unsafe controls.</td><td>Pin dependencies, prohibit secrets in clients, apply CSP, inspect network calls, run dependency and static security checks, and sandbox untrusted assets.</td></tr>
+              <tr><td><strong>16. Is the single-file miracle maintainable?</strong></td><td>Not demonstrated. Peter celebrates complexity in one file, but compact deployment and maintainable architecture are different objectives.</td><td>Keep the one-file baseline, then refactor systems, state, renderer, assets, and tests into modules. Require behavioral parity after refactoring.</td></tr>
+              <tr><td><strong>17. Is it accessible and comfortable?</strong></td><td>Not evaluated in the video.</td><td>Add keyboard operation, visible focus, labels, contrast, reduced-motion mode, pause controls, non-3D fallback explanation, and motion-sickness-safe camera defaults.</td></tr>
+              <tr><td><strong>18. Is the historical or sensitive subject handled responsibly?</strong></td><td>Not systematically addressed. Spectacle can overwhelm context, especially for D-Day or disaster scenes.</td><td>Define audience, educational purpose, sourcing, uncertainty labels, violence level, and what must not be gamified or aestheticized.</td></tr>
+              <tr><td><strong>19. Does a control expose a model—or just trigger an effect?</strong></td><td>Varies. Some timelines and cross-sections clarify mechanisms; some controls are aesthetic.</td><td>For each control, write the hypothesis a user can test and the observable consequence. Remove controls without a cognitive or operational job.</td></tr>
+              <tr><td><strong>20. Will the prompt survive a new model generation?</strong></td><td>Unknown. Model behavior and tool environments drift.</td><td>Version prompts as tests, preserve reference screenshots and interaction traces, rerun on upgrades, and revise only after diagnosing the changed failure mode.</td></tr>
+              <tr><td><strong>21. Are you optimizing for a benchmark instead of your product?</strong></td><td>A real risk. Peter describes 3D coordination as a proxy for complex codebase capability around 13:56–14:20.</td><td>Use the benchmark to test coordination, then validate the actual application workflow separately. Proxy gains do not guarantee domain gains.</td></tr>
+              <tr><td><strong>22. When should you stop adding detail?</strong></td><td>The corpus emphasizes maximum ambition, but it does not define diminishing returns.</td><td>Stop when the primary job, first-frame proof, interaction tests, truth checks, and performance target pass—and the next detail adds less value than reliability work.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="protocol">
+        <h2>A rigorous protocol for your next 3D prompt</h2>
+        <ol>
+          <li><strong>Write a one-page scenario specification</strong> with the compiler above. Do not begin with adjectives; begin with user job, truth standard, and first-frame proof.</li>
+          <li><strong>Generate a low-cost architecture run.</strong> Judge whether the premise, world extent, state model, and controls exist. Ignore polish.</li>
+          <li><strong>Run a first-frame test.</strong> Capture the same viewport and camera state. If the premise is not legible, fix composition before adding systems.</li>
+          <li><strong>Add systems by failure class.</strong> Repair spatial identity, then behavior, then interaction, then art direction. Avoid global “make it better” requests.</li>
+          <li><strong>Escalate reasoning selectively.</strong> Use higher budgets when coordination or code architecture fails, and keep the cheaper output as a baseline.</li>
+          <li><strong>Repeat the final candidate.</strong> Measure variance across three to five clean runs and preserve every result.</li>
+          <li><strong>Validate beyond the happy path.</strong> Factual sampling, random interaction, reset, boundary traversal, performance soak, reduced motion, offline/network policy, and dependency audit.</li>
+          <li><strong>Publish a receipt.</strong> Bundle prompt, state, model, files, settings, costs, evidence frames, rubric, defects, and test results. That bundle—not prompt text alone—is the reproducible artifact.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Best single improvement to the corpus.</strong> Add machine-readable acceptance tests and run manifests to each prompt. The public prompts are unusually strong creative specifications; what they lack is experimental instrumentation for reliability, cost, truth, and performance.
+        </div>
+      </section>
+
+      <section id="provenance">
+        <h2>Sources, coverage, and provenance</h2>
+        <ul>
+          <li><a href="https://www.youtube.com/watch?v=GQPi39sjNhU">“GPT-6-Astra | First impressions”</a>, Arena AI / Peter Gostev, 33:49.8.</li>
+          <li><a href="transcript.txt">Timestamped transcript and description</a>, used for narration claims and workflow boundaries.</li>
+          <li><a href="reference_repo/prompts.json">Peter Gostev’s public 3D Prompt Collection snapshot</a>, 63 prompts at repository commit <code>b5b5df94ae9326523d57b70708a81f457e30fac0</code>.</li>
+          <li><a href="replication_guide.md">Canonical scene inventory, reconstructed prompts, workflows, and evidence labels</a>.</li>
+          <li><a href="source-manifest.json">Source manifest</a> and <a href="evidence_frames/README.md">visual evidence index</a>.</li>
+        </ul>
+        <div class="boundary">
+          <strong>Coverage statement.</strong> Identity, transcript, audio, and acquired source representations are complete. Analytical visual coverage is substantial: the entire timeline was sampled every five seconds, with targeted frame inspection around all identified demonstrations. The public prompt repository was read in full and analyzed structurally. No external historical, scientific, geographical, security, or performance verification was performed for the generated scenes themselves.
+        </div>
+        <p class="small">Evidence language: <strong>observed</strong> means visible or explicitly narrated; <strong>repo-correlated</strong> means strong correspondence without proof of verbatim use; <strong>analyst-derived</strong> means a recommendation inferred from the source set; <strong>unknown</strong> means the evidence is insufficient and no detail is invented.</p>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    Built as a dependency-free, locally portable report. No scripts, trackers, remote fonts, or embedded third-party content.
+  </footer>
+</body>
+</html>

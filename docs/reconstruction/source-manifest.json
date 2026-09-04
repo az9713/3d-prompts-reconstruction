@@ -1,0 +1,59 @@
+{
+  "retrieved_at": "2026-09-03T15:20:00-07:00",
+  "sources": [
+    {
+      "id": "video-GQPi39sjNhU",
+      "input": "https://www.youtube.com/watch?v=GQPi39sjNhU",
+      "work": "GPT-6-Astra | First impressions",
+      "creator": "Arena AI / Peter Gostev",
+      "canonical_locator": "https://www.youtube.com/watch?v=GQPi39sjNhU",
+      "representation": "local 1920x1080 50fps audiovisual capture",
+      "path": "source_video.mp4",
+      "sha256": "2C82F5E3E17C1F0CAEE5B3D6E11A4F782400661F19B3FCCDF912512FA680E458",
+      "duration_seconds": 2029.801,
+      "status": "acquired",
+      "coverage": {"identity": "full", "visual": "full", "audio": "full", "temporal": "full", "citation": "timestamp-addressable"}
+    },
+    {
+      "id": "video-GQPi39sjNhU-720",
+      "input": "source_video.info.json format 298+251",
+      "parent": "video-GQPi39sjNhU",
+      "representation": "local 1280x720 H.264 analysis proxy with original audio",
+      "path": "source_video_720.mp4",
+      "sha256": "72C67F3F5B9AA28AF3FD22D10EAF5A45EC32A93803A123DB3AEBAB43D56D68D6",
+      "status": "acquired",
+      "coverage": {"identity": "full", "visual": "full", "audio": "full", "temporal": "full", "citation": "timestamp-addressable"}
+    },
+    {
+      "id": "transcript-GQPi39sjNhU",
+      "input": "YouTube transcript for GQPi39sjNhU",
+      "parent": "video-GQPi39sjNhU",
+      "representation": "YouTube timestamped transcript and description",
+      "path": "transcript.txt",
+      "sha256": "C6E2B7EB69220A0217363AA61B4648513FB31547B8904D6B0F8C1FC2B374F766",
+      "status": "acquired",
+      "coverage": {"identity": "full", "textual": "full", "temporal": "full", "citation": "timestamp-addressable"}
+    },
+    {
+      "id": "repo-petergpt-3d-prompt-collection",
+      "input": "https://github.com/petergpt/3d-prompt-collection",
+      "work": "3D Prompt Collection",
+      "creator": "Peter Gostev",
+      "canonical_locator": "https://github.com/petergpt/3d-prompt-collection",
+      "representation": "git checkout at b5b5df94ae9326523d57b70708a81f457e30fac0",
+      "path": "reference_repo/prompts.json",
+      "sha256": "FB816C81859DA665765B2AB39F6EE3D78C2A4677A3C96F7EBE162E8C67C3867D",
+      "status": "acquired",
+      "coverage": {"identity": "full", "textual": "full", "citation": "entry-addressable"}
+    }
+  ],
+  "coverage": {
+    "identity": "full",
+    "textual": "full",
+    "visual": "substantial",
+    "audio": "full",
+    "temporal": "substantial",
+    "citation": "timestamp-addressable",
+    "verification": "video-repository-correlation-performed"
+  }
+}

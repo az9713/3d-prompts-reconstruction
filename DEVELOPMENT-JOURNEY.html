@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>Development Journey — Reverse-engineering Peter Gostev's 3D prompt system</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg:#f1eee7; --paper:#fffdf8; --ink:#191b18; --muted:#62665f; --line:#cbc8be;
+      --green:#1e6655; --green-soft:#dcebe5; --amber:#9b5c18; --amber-soft:#f5e6cf;
+      --red:#8a3f35; --red-soft:#f3dfdb; --blue:#265a78; --blue-soft:#dce9f1; --code:#20231f;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#111411; --paper:#191d19; --ink:#edf0ea; --muted:#adb3a9; --line:#39413a;
+        --green:#79cbb2; --green-soft:#1c3a31; --amber:#e2a55d; --amber-soft:#3d2c1d;
+        --red:#e69b8d; --red-soft:#3a2422; --blue:#8fc9e8; --blue-soft:#1d3441; --code:#0d100e;
+      }
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.68 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:var(--green); text-underline-offset:.18em; }
+    header, main, footer { width:min(92rem, calc(100% - 2rem)); margin-inline:auto; }
+    header { padding:4.5rem 0 2.5rem; border-bottom:1px solid var(--line); }
+    .eyebrow { color:var(--green); font-weight:750; letter-spacing:.12em; text-transform:uppercase; font-size:.76rem; }
+    h1 { margin:.4rem 0 1rem; max-width:17ch; font:800 clamp(2.7rem,7vw,6.5rem)/.94 Georgia,serif; letter-spacing:-.045em; }
+    .deck { max-width:72ch; color:var(--muted); font-size:1.16rem; }
+    .meta { display:flex; flex-wrap:wrap; gap:.6rem 1.5rem; margin-top:1.5rem; font-size:.9rem; color:var(--muted); }
+    main { display:grid; grid-template-columns:minmax(15rem,20rem) minmax(0,1fr); gap:3rem; padding:2.5rem 0 6rem; }
+    nav { position:sticky; top:1rem; align-self:start; max-height:calc(100vh - 2rem); overflow:auto; padding:1rem 1.1rem; background:var(--paper); border:1px solid var(--line); }
+    nav strong { display:block; margin-bottom:.55rem; }
+    nav a { display:block; margin:.3rem 0; font-size:.9rem; }
+    article { min-width:0; }
+    section { scroll-margin-top:1rem; }
+    h2 { margin:4rem 0 1rem; padding-top:1.15rem; border-top:1px solid var(--line); font:750 clamp(1.8rem,3.5vw,2.7rem)/1.08 Georgia,serif; letter-spacing:-.025em; }
+    h3 { margin:2.1rem 0 .55rem; font-size:1.23rem; line-height:1.25; }
+    h4 { margin:1.4rem 0 .4rem; }
+    p, li { max-width:82ch; }
+    ul, ol { padding-left:1.3rem; }
+    li + li { margin-top:.35rem; }
+    .lede, .callout { padding:1.05rem 1.2rem; background:var(--paper); border-left:.32rem solid var(--green); }
+    .warning { border-left-color:var(--amber); background:var(--amber-soft); }
+    .failure { border-left-color:var(--red); background:var(--red-soft); }
+    .inference { border-left-color:var(--blue); background:var(--blue-soft); }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+    .card { padding:1rem 1.1rem; background:var(--paper); border:1px solid var(--line); }
+    .card h3 { margin-top:0; }
+    .badge { display:inline-block; margin:.08rem .25rem .08rem 0; padding:.14rem .48rem; border:1px solid currentColor; border-radius:999px; font-size:.72rem; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+    .observed { color:var(--green); } .narrated { color:var(--blue); } .correlated { color:var(--amber); } .reconstructed { color:var(--red); }
+    table { width:100%; border-collapse:collapse; display:block; overflow:auto; background:var(--paper); }
+    th, td { border:1px solid var(--line); padding:.65rem .72rem; text-align:left; vertical-align:top; min-width:9rem; }
+    th { background:color-mix(in srgb, var(--paper) 70%, var(--green-soft)); }
+    code, pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+    code { font-size:.88em; }
+    pre { max-width:100%; overflow:auto; padding:1rem 1.1rem; color:#edf3eb; background:var(--code); border:1px solid var(--line); white-space:pre-wrap; }
+    figure { margin:1.5rem 0; }
+    img { display:block; max-width:100%; height:auto; border:1px solid var(--line); background:#ddd; }
+    figcaption { margin-top:.45rem; color:var(--muted); font-size:.88rem; }
+    .pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+    details { margin:.75rem 0; padding:.8rem 1rem; background:var(--paper); border:1px solid var(--line); }
+    summary { cursor:pointer; font-weight:700; }
+    blockquote { margin:1rem 0; padding:.3rem 1rem; border-left:.25rem solid var(--line); color:var(--muted); }
+    .timeline { border-left:2px solid var(--line); margin-left:.55rem; padding-left:1.35rem; }
+    .timeline h3::before { content:""; display:inline-block; width:.72rem; height:.72rem; margin:0 .78rem 0 -1.77rem; border-radius:50%; background:var(--green); box-shadow:0 0 0 .25rem var(--bg); }
+    .metric { font:800 2rem/1 Georgia,serif; color:var(--green); }
+    .small { font-size:.9rem; color:var(--muted); }
+    footer { padding:1.5rem 0 3.5rem; border-top:1px solid var(--line); color:var(--muted); }
+    @media (max-width:900px) { main { grid-template-columns:1fr; } nav { position:static; max-height:none; columns:2; } .grid,.pair { grid-template-columns:1fr; } }
+    @media (max-width:540px) { nav { columns:1; } }
+    @media print { nav { display:none; } main { display:block; } body { background:#fff; color:#000; font-size:11pt; } .card,.lede,.callout,details,table { background:#fff; } a { color:#000; } details { break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Reconstructed development journey · evidence first</p>
+    <h1>From a video to a reusable 3D prompt system</h1>
+    <p class="deck">How Peter Gostev's GPT-6 Astra demonstrations were decomposed into a shared master prompt, 37 project-specific prompt/workflow specifications, and then revised after Stonehenge and Cappadocia exposed the difference between a feature-rich procedural demo and a realistic world.</p>
+    <div class="meta">
+      <span><strong>Date:</strong> 3 September 2026</span>
+      <span><strong>Deliverable:</strong> <code>DEVELOPMENT-JOURNEY.html</code></span>
+      <span><strong>Reconstruction basis:</strong> current task transcript + local artifacts + source/video evidence + implementation code</span>
+    </div>
+  </header>
+
+  <main>
+    <nav aria-label="Journey navigation">
+      <strong>Journey map</strong>
+      <a href="#brief">1. The brief</a>
+      <a href="#starting-point">2. Starting point</a>
+      <a href="#chronology">3. Chronological reconstruction</a>
+      <a href="#watching">4. What “watching” meant</a>
+      <a href="#inverse-problem">5. The actual crux</a>
+      <a href="#master">6. Master-prompt derivation</a>
+      <a href="#individual">7. Individual prompts</a>
+      <a href="#repository">8. Repository's role</a>
+      <a href="#meta-patterns">9. Supported meta-patterns</a>
+      <a href="#revisions">10. Stonehenge + Cappadocia revisions</a>
+      <a href="#tools">11. Tools and agents</a>
+      <a href="#failures">12. What went wrong</a>
+      <a href="#verification">13. Verification</a>
+      <a href="#status">14. Where things stand</a>
+      <a href="#appendix">Appendix: all 37 projects</a>
+    </nav>
+
+    <article>
+      <div class="lede">
+        <strong>Truth in advertising.</strong> This is a retrospective reconstruction of work already performed in this task. It is not a live screen recording and it does not claim access to Peter's hidden Arena prompts, private workflow, system prompt, generation seeds, or full execution logs. The reconstruction uses the local video, transcript, sampled frames, public repository snapshot, the prompt artifacts created here, and the two resulting codebases. Where the record supports only inference, the page says so.
+      </div>
+
+      <section id="brief">
+        <h2>1. The brief</h2>
+        <p>The immediate request was:</p>
+        <blockquote>“use Claude Code skill /dev-journey to write a development journey html capturing how you reverse engineer the master prompt and individual prompt for each project. Also capture how you revise the two prompts for the balloon and the stonehenge project. the goal is to demystify how the reverse engineering work and what are the meta-patterns that are common across all Peter's prompts. also mention how and if the prompt repository plays a role in the reverse engineered prompts.”</blockquote>
+        <p>The larger task evolved through several user decisions: read the shared discussion; watch the video end-to-end; create a reverse-engineering report; select the cheapest project to test; use low reasoning; answer the Stonehenge builder's ambiguity questions; add physical law as a non-negotiable; select the second-cheapest project; evaluate both implementations; and revise the prompt system after the renders looked too geometrically simple.</p>
+        <p>The deliverable is therefore both narrative and technical: readable enough to demystify the reasoning, but precise enough that another analyst could reproduce the method and challenge its inferences.</p>
+      </section>
+
+      <section id="starting-point">
+        <h2>2. Starting point and cold-start state</h2>
+        <div class="grid">
+          <div class="card"><div class="metric">33:49.8</div><p>Source-video duration. A 1920×1080, 50 fps local audiovisual representation was preserved.</p></div>
+          <div class="card"><div class="metric">37</div><p>Distinct demonstrated artifacts catalogued: 36 3D/interactive projects plus one animated SVG study.</p></div>
+          <div class="card"><div class="metric">63</div><p>Public prompts in Peter Gostev's repository snapshot at commit <code>b5b5df94ae9326523d57b70708a81f457e30fac0</code>.</p></div>
+          <div class="card"><div class="metric">21</div><p>Project entries now explicitly labeled repo-correlated in the completed replication guide. An older front-page sentence said 18; that stale count was corrected during this audit.</p></div>
+        </div>
+        <p>The source boundary was deliberately narrow: Peter's video and transcript, Peter's public prompt repository, and the locally generated Stonehenge/Cappadocia implementations. External sources were used later only to check specific realism and correctness claims such as Stonehenge's current lintel count, monument coordinates, and Cappadocia's geological morphology.</p>
+        <p>Nothing in the video exposed the exact submitted prompts. This single fact governed the entire epistemic design.</p>
+      </section>
+
+      <section id="chronology">
+        <h2>3. Chronological reconstruction</h2>
+        <div class="timeline">
+          <h3>Phase 1 — acquire a complete evidence package</h3>
+          <p>The source video, timestamped transcript, metadata, and repository were preserved locally. The original video was retained for fidelity. A 1280×720 H.264 proxy was also produced because decoding the original AV1 stream repeatedly was unnecessarily slow for contact-sheet analysis. Hashes, retrieval state, coverage, and source relationships were recorded in <a href="source-manifest.json">the source manifest</a>.</p>
+
+          <h3>Phase 2 — watch temporally, not as a slideshow</h3>
+          <p>The video was processed through four synchronized channels: complete audio/transcript, full-duration five-second sampling, targeted full-frame inspection around project boundaries and controls, and repository correlation. Twenty-one contact sheets covered the whole runtime and 38 targeted frames preserved titles, visual systems, UI, and reasoning-level comparisons.</p>
+
+          <h3>Phase 3 — build the scene inventory before writing prompts</h3>
+          <p>Every demonstrated artifact was assigned a project number, timestamp range, generation regime, evidence class, and observable contract. This prevented visually similar scenes from being conflated and exposed three fundamentally different workflows: multi-hour iterative builds, 20 one-shot Max generations, and reasoning-level reruns. The final gallery was inventoried separately.</p>
+
+          <h3>Phase 4 — discover invariants</h3>
+          <p>Across scenes, the recurring structure was not a common subject but a common specification grammar: a defining first frame, a whole world around the hero, editorial art direction, visible motion, camera presets, consequential controls, performance tactics, and explicit failure exclusions. Those invariants became the shared master prompt.</p>
+
+          <h3>Phase 5 — compile one delta per project</h3>
+          <p>Each scene's unique ontology—what exists, how it is arranged, what moves, what the user can change, and what a bad result looks like—became a short project delta. When the repository strongly matched a scene, it supplied explicit language and engineering constraints. Otherwise, the delta was reconstructed only from observable output and narration.</p>
+
+          <h3>Phase 6 — choose a low-cost falsification test</h3>
+          <p>Stonehenge was selected as the cheapest fast test: a bounded landmark, modest motion, small interface, and little need for large crowds or streaming. Low reasoning was recommended as the cost baseline. The aim was not to assume the prompt worked, but to discover which requirements a coding agent would satisfy cheaply and which it would approximate.</p>
+
+          <h3>Phase 7 — resolve ambiguity before implementation</h3>
+          <p>The Stonehenge agent asked whether “current monument” implied both present-day and reconstructed modes, and whether modern coordinates/year could drive solstice calculations. The decision was present-day only, no reconstruction mode; use documented monument coordinates and a documented modern reference year, with midsummer sunrise and midwinter sunset presets plus manual azimuth/elevation control. This was a scope decision, not a fact recovered from the video.</p>
+
+          <h3>Phase 8 — insert physical law as a hard constraint</h3>
+          <p>At the user's request, the shared master gained a non-negotiable physics section covering gravity, structural support, contact, collisions, trajectories, scale, illumination, shadows, and material response. The Stonehenge prompt on disk received this block. The Cappadocia prompt had already been dispatched and retained the earlier master, so the two test conditions were not perfectly matched.</p>
+
+          <h3>Phase 9 — run a second low-cost project</h3>
+          <p>Cappadocia was chosen second. It is still bounded enough for a one-page Three.js build, but more demanding than Stonehenge because it combines terrain morphology, atmospheric depth, many moving balloons, textile detail, and multiple altitude bands.</p>
+
+          <h3>Phase 10 — evaluate the actual implementations</h3>
+          <p>Both apps built and ran. Scripted browser checks exercised views, presets, quality controls, reset behavior, and error capture. Screenshots were inspected at wide and close views. Source code was then read to explain the visible result. This source-to-pixel connection mattered: “simple geometry” became a testable diagnosis rather than an aesthetic complaint.</p>
+
+          <h3>Phase 11 — revise the optimization target</h3>
+          <p>The test falsified an assumption in the initial master. It successfully elicited ambitious feature breadth, but it did not rank visual realism above procedural speed, interaction count, and performance. The revised system therefore moved documentary realism to the top, allowed local licensed PBR/HDR/GLTF assets, prohibited visible primitives for hero objects, replaced a three-motion quota with physically justified motion, and added clay/material/shadow review views.</p>
+        </div>
+      </section>
+
+      <section id="watching">
+        <h2>4. What “watching the video end-to-end” actually meant</h2>
+        <p>It did not mean claiming that a human-like gaze inspected each of roughly 101,000 frames individually. It meant complete temporal and audiovisual coverage using representations suited to different questions.</p>
+        <table>
+          <thead><tr><th>Evidence channel</th><th>What it answered</th><th>Coverage</th><th>Known limit</th></tr></thead>
+          <tbody>
+            <tr><td>Original video + full audio</td><td>Motion, transitions, interaction demonstrations, presenter's judgment and caveats.</td><td>Full source acquired; audio full.</td><td>Exact private prompts and Arena logs never appear.</td></tr>
+            <tr><td>Timestamped transcript</td><td>Project boundaries, one-shot/multi-hour claims, reasoning level, generation-time narration, uncertainty statements.</td><td>Full textual track.</td><td>Transcript cannot reveal purely visual details.</td></tr>
+            <tr><td>Five-second contact sheets</td><td>End-to-end temporal coverage, cuts, scene identity, missed segments.</td><td>21 sheets across full runtime.</td><td>A transient state shorter than five seconds can be missed.</td></tr>
+            <tr><td>38 targeted frames</td><td>Interface labels, scene composition, camera modes, specific geometry and comparison states.</td><td>Substantial visual inspection.</td><td>Still images do not prove runtime correctness.</td></tr>
+            <tr><td>Repository snapshot</td><td>Public prompt wording, repeated clauses, technical guardrails, matching scene concepts.</td><td>All 63 entries.</td><td>Correlation is not proof of verbatim submission.</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <img src="evidence_frames/targeted/t_0315.png" alt="The twenty-project one-shot gallery shown in Peter Gostev's video">
+          <figcaption>Targeted frame around 05:15: the one-shot collection established the need for an inventory before attempting synthesis.</figcaption>
+        </figure>
+        <div class="callout warning"><strong>Why this matters.</strong> A transcript-only analysis would over-weight what Peter says and miss interface and spatial evidence. A few hand-picked screenshots would over-weight attractive moments and miss failures, transitions, and workflow claims. The combination reduces—but cannot eliminate—selection bias.</div>
+      </section>
+
+      <section id="inverse-problem">
+        <h2>5. The actual crux: prompt recovery is an inverse problem</h2>
+        <p>A rendered application is the result of many hidden causes:</p>
+        <pre>visible result = model + reasoning level + system instructions + user prompt
+               + scaffolding + libraries + assets + tool calls + prior state
+               + random sampling + fixes + runtime environment</pre>
+        <p>Therefore no visual inspection can uniquely recover the original user prompt. Many inputs can produce similar pixels. “Reverse engineering” here means finding the least speculative specification that would plausibly reproduce the observed behavior—not pretending to recover hidden text.</p>
+        <h3>The six-step inversion</h3>
+        <ol>
+          <li><strong>Acquire:</strong> preserve every available modality and its provenance.</li>
+          <li><strong>Segment:</strong> separate projects and generation regimes before comparison.</li>
+          <li><strong>Encode:</strong> describe every scene with the same observation schema.</li>
+          <li><strong>Triangulate:</strong> compare visible result, narration, and public repository; preserve disagreement.</li>
+          <li><strong>Invert:</strong> translate a visible property into the weakest prompt requirement sufficient to request it.</li>
+          <li><strong>Falsify:</strong> write failure exclusions and acceptance tests so the reconstruction can be proven inadequate.</li>
+        </ol>
+        <h3>One concrete example</h3>
+        <table>
+          <thead><tr><th>Layer</th><th>Cappadocia example</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge observed">Observed</span></td><td>Many balloons occupy distinct heights; patterned envelopes, warm valleys, haze and multiple camera altitudes are visible.</td></tr>
+            <tr><td><span class="badge narrated">Narrated</span></td><td>Peter identifies it as one of the one-shot Max projects and comments on the generated result.</td></tr>
+            <tr><td><span class="badge correlated">Repo-correlated</span></td><td>Repository prompt 26 strongly matches the title and several requested features.</td></tr>
+            <tr><td><span class="badge reconstructed">Reconstructed</span></td><td>The delta requests 80–100 balloons, altitude variation, Göreme terrain, four camera views, and explicit exclusions. Exact numbers and clauses are a reproducible specification, not proof of the hidden prompt.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="master">
+        <h2>6. How the shared master prompt was derived</h2>
+        <p>The master was not extracted as a repeated block of text. It was compiled from invariants that recurred across many outputs and, separately, from repeated clauses in the repository. The resulting abstraction was intentionally smaller than the 63-prompt corpus.</p>
+        <table>
+          <thead><tr><th>Observed invariant</th><th>Why it became shared</th><th>Master-prompt clause</th></tr></thead>
+          <tbody>
+            <tr><td>The concept is legible immediately.</td><td>Repeated across unrelated subjects; not scenario-specific.</td><td><strong>FIRST FRAME:</strong> open on the defining spectacle; no splash or empty state.</td></tr>
+            <tr><td>The hero sits inside a larger world.</td><td>London, Manhattan, Golden Gate, Rome and even biological scenes use contextual layers.</td><td><strong>WORLD:</strong> foreground, midground, background, atmosphere, human-scale cues.</td></tr>
+            <tr><td>Motion exists before interaction.</td><td>Traffic, water, crowds, animals, clouds and particles recur.</td><td><strong>MOTION:</strong> visible systems with varied phases, speeds and paths.</td></tr>
+            <tr><td>Camera modes explain scale.</td><td>Wide, intimate and impossible views recur across the corpus.</td><td><strong>EXPLORATION:</strong> orbit/pan/zoom or first-person plus named presets and reset.</td></tr>
+            <tr><td>Controls alter the world.</td><td>Time, era, weather, density or mode controls have visible consequences.</td><td><strong>UI:</strong> few compact controls, each reversible and consequential.</td></tr>
+            <tr><td>High ambition is paired with browser engineering.</td><td>Repository prompts frequently demand instancing, LOD and bounded pixel ratio.</td><td><strong>TECHNICAL CONTRACT:</strong> pinned Three.js, instancing, pooling, LOD, disposal, graceful quality reduction.</td></tr>
+            <tr><td>Peter's prompts name bad results.</td><td>Negative examples occur in 48 of 63 repository prompts.</td><td><strong>ACCEPTANCE:</strong> explicit failure modes and runnable local result.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Version history</h3>
+        <table>
+          <thead><tr><th>Version</th><th>Optimization target</th><th>Important language</th><th>What the test revealed</th></tr></thead>
+          <tbody>
+            <tr><td>Hidden original</td><td>Unknown.</td><td>Not visible in the video.</td><td>Cannot be recovered exactly.</td></tr>
+            <tr><td>Reconstructed v1</td><td>Peter-style benchmark: ambition, completeness, interaction, motion, performance.</td><td>“Prefer procedural geometry … restrained stylization”; “at least three independent visible systems”; “avoid external models and images.”</td><td>Strong feature coverage, weak photorealistic hero fidelity.</td></tr>
+            <tr><td>v1.1 physics amendment</td><td>Prevent physically impossible motion, support, lighting and intersections.</td><td>“Laws of physics must be obeyed … use a conservative physically plausible approximation and disclose the approximation.”</td><td>Physics language does not create geometric or material realism by itself.</td></tr>
+            <tr><td>Production v2</td><td>Correctness and documentary visual realism before breadth.</td><td>Photorealism highest priority; assets allowed; no visible primitives for hero subjects; PBR detail bands; reference/clay/material/shadow/final views.</td><td>Recommended replacement after evaluation; not the prompt under which the original two screenshots were generated.</td></tr>
+          </tbody>
+        </table>
+        <p>The complete benchmark-style v1 master is preserved in <a href="replication_guide.md#shared-master-prompt">the replication guide</a>. The production v2 logic is summarized here because its purpose is different: it is not a faithful imitation of Peter's stylized benchmark grammar; it is a correction for the user's stated realism objective.</p>
+      </section>
+
+      <section id="individual">
+        <h2>7. How each individual prompt was produced</h2>
+        <p>Each project delta was compiled from the same six slots. This made the prompts comparable without forcing every scene into identical content.</p>
+        <ol>
+          <li><strong>Thesis:</strong> one sentence describing the singular spectacle.</li>
+          <li><strong>Scene ontology:</strong> hero, terrain/context, supporting entities, atmosphere and human-scale cues.</li>
+          <li><strong>Spatial semantics:</strong> where things belong, their scale, ordering, relationships and exclusions.</li>
+          <li><strong>Behavior:</strong> what moves, changes or reacts and why.</li>
+          <li><strong>Camera and controls:</strong> the authored views and user-visible state changes.</li>
+          <li><strong>Collapse modes:</strong> the tempting cheap approximations the model must avoid.</li>
+        </ol>
+        <div class="callout inference"><strong>Inference discipline:</strong> a requested element was included only if it was visible, narrated, strongly repo-correlated, or necessary to make an observed behavior reproducible. Unsupported internal architecture was not attributed to Peter.</div>
+        <p>The appendix documents the derivation basis for all 37 entries. The exact copyable deltas and multi-hour workflows live in <a href="index.html#one-shot-prompt-deltas">the main report</a> and <a href="replication_guide.md">the canonical prompt guide</a>.</p>
+      </section>
+
+      <section id="repository">
+        <h2>8. How—and how not—the prompt repository played a role</h2>
+        <table>
+          <thead><tr><th>Role</th><th>Used?</th><th>What it legitimately supports</th></tr></thead>
+          <tbody>
+            <tr><td>Scene matching</td><td>Yes</td><td>Title-and-feature matches such as Cappadocia ↔ prompt 26 and Stonehenge ↔ prompt 27 increase confidence that the public corpus belongs to the same design lineage.</td></tr>
+            <tr><td>Vocabulary recovery</td><td>Yes</td><td>Repeated language around first frame, whole-world scale, camera presets, failure exclusions, instancing, LOD and performance informed the shared grammar.</td></tr>
+            <tr><td>Mechanical pattern counts</td><td>Yes</td><td>Counts across all 63 prompts established that several apparent patterns were corpus-wide rather than cherry-picked impressions.</td></tr>
+            <tr><td>Exact hidden prompt transcript</td><td><strong>No</strong></td><td>The video never displays prompt text, and repository publication does not prove what was submitted in Arena.</td></tr>
+            <tr><td>Complete coverage of the video</td><td><strong>No</strong></td><td>Several visible projects have no exact repository counterpart; those remained reconstructed.</td></tr>
+            <tr><td>Proof of causality</td><td><strong>No</strong></td><td>A recurring clause and a good output can correlate without proving that clause caused the quality.</td></tr>
+          </tbody>
+        </table>
+        <p>The snapshot contains 63 prompts. A mechanical keyword scan found: Three.js in 62; first-frame instructions in 36; negative constraints in 48; procedural generation in 48; instancing in 58; LOD in 39; camera presets/modes in 49; performance targets in 50; visible motion in 51; compact/minimal UI in 49; and acceptance/guardrail language in 24. Prompt length ranged from 81 to 1,825 words, with a median of 484.</p>
+        <p class="small">These are keyword-based lower bounds. They describe the text corpus; they do not prove causal effectiveness. Synonyms can produce false negatives, and a keyword can appear without being operationally important.</p>
+        <div class="callout warning"><strong>Repository conclusion.</strong> The repository was highly useful as a corroborating design corpus and prompt-language prior. It was not used to launder inference into quotation. “Repo-correlated” means strong correspondence, not “verbatim prompt recovered.”</div>
+      </section>
+
+      <section id="meta-patterns">
+        <h2>9. Meta-patterns supported across Peter's prompts</h2>
+        <div class="grid">
+          <div class="card"><h3>1. One coherent impossibility</h3><p>The prompts often ask for an experience that feels impossibly complete—an entire island, city, ecosystem or historical transformation—but pair it with concrete representations such as instancing, LOD and procedural families.</p></div>
+          <div class="card"><h3>2. First frame as contract</h3><p>The opening image must communicate subject, scale and mood without interaction. This forces composition into the specification instead of leaving it to chance.</p></div>
+          <div class="card"><h3>3. World before widget</h3><p>The central monument or object is never enough. Terrain, adjacent structures, circulation, weather, life and horizon establish believable scale.</p></div>
+          <div class="card"><h3>4. Scale needs multiple representations</h3><p>Far silhouettes, mid-scale families and near hero detail are different data problems. Peter's prompts repeatedly use LOD or equivalent strategies to preserve both extent and inspection.</p></div>
+          <div class="card"><h3>5. “Alive” is decomposed</h3><p>Motion is divided into independent systems with different paths and phases. The good idea is decomposition; the original master over-literalized it into a fixed quota.</p></div>
+          <div class="card"><h3>6. Cameras are explanations</h3><p>Named views are not navigation garnish. They reveal the evidence needed to understand scale, mechanism, interior, context or comparison.</p></div>
+          <div class="card"><h3>7. Controls must change meaning</h3><p>Time, weather, density, era and simulation-state controls expose the model of the world. Decorative sliders are rejected.</p></div>
+          <div class="card"><h3>8. Interface and world share an art direction</h3><p>Typography, palette, spacing and panel opacity are part of the scene's authorship, not a generic dashboard pasted over it.</p></div>
+          <div class="card"><h3>9. Negative constraints encode taste</h3><p>“Do not make X” clauses identify cheap local optima: an isolated hero, a flat plane, identical clones, global fog, synchronized motion or UI obstruction.</p></div>
+          <div class="card"><h3>10. Graceful degradation protects the thesis</h3><p>Quality changes should remove distant density, reflections or secondary effects before damaging the hero silhouette or world completeness.</p></div>
+          <div class="card"><h3>11. Benchmark and production are different modes</h3><p>A one-shot prompt tests a model. A production workflow uses references, asset provenance, iteration, deterministic capture and domain review. Confusing them produced the realism mismatch.</p></div>
+          <div class="card"><h3>12. Reasoning level is a variable, not a virtue</h3><p>The video itself does not establish that the highest reasoning level always wins. Cost, variance and defect type should determine escalation.</p></div>
+        </div>
+        <h3>Claims the evidence does not support</h3>
+        <ul>
+          <li>Longer prompts are inherently better.</li>
+          <li>“Billion-piece” or “maximum ambition” is a magic quality switch.</li>
+          <li>One attractive one-shot is reproducible across seeds.</li>
+          <li>Visual plausibility establishes historical, geographic, biological or physical accuracy.</li>
+          <li>More moving objects imply a better simulation.</li>
+          <li>Peter's web-3D pattern transfers unchanged to CAD, scientific simulation, VR training or production games.</li>
+        </ul>
+      </section>
+
+      <section id="revisions">
+        <h2>10. How Stonehenge and Cappadocia changed the prompts</h2>
+        <div class="pair">
+          <figure>
+            <img src="evaluation_evidence/stonehenge-hero.png" alt="Evaluated Stonehenge implementation with visibly simplified stone and terrain geometry">
+            <figcaption>Stonehenge evaluated hero view. It is legible and interactive, but the geometry and materials remain visibly synthetic.</figcaption>
+          </figure>
+          <figure>
+            <img src="evaluation_evidence/cappadocia-hero.png" alt="Evaluated Cappadocia implementation with simplified repeated terrain forms and balloon geometry">
+            <figcaption>Cappadocia evaluated hero view. Feature count is high, but repeated forms and limited surface response constrain realism.</figcaption>
+          </figure>
+        </div>
+
+        <h3>Evidence-backed diagnosis</h3>
+        <table>
+          <thead><tr><th>Symptom</th><th>Implementation evidence at evaluation time</th><th>Prompt cause</th><th>Revision</th></tr></thead>
+          <tbody>
+            <tr><td>Stonehenge stones read as softened boxes.</td><td><code>roughBox()</code> began with <code>BoxGeometry</code>; main materials were uniform colors with roughness values.</td><td>The prompt asked for procedural geometry and “irregular weathering” but did not specify mesh/sculpt/scan quality, texel density or material maps.</td><td>Require unique near-field silhouettes, erosion, lichen, pits, mortise/tenon detail and scanned or subdivided/displaced hero meshes.</td></tr>
+            <tr><td>Earthworks read as graphic rings.</td><td>The implementation used <code>TorusGeometry</code> for bank and ditch.</td><td>“Earthwork rings” named content but not morphology or prohibited primitive expression.</td><td>Specify low, irregular, discontinuous terrain relief integrated into the grass; prohibit a visible torus.</td></tr>
+            <tr><td>Stonehenge history was over-completed.</td><td>The generated outer structure included more lintels than present-day evidence supports.</td><td>“Open on the complete monument” conflicted with “current monument”; the word <em>complete</em> invited reconstruction.</td><td>Say present-day only and explicitly preserve the current six surviving outer sarsen lintels.</td></tr>
+            <tr><td>Displayed solar state and shadow model disagreed.</td><td>The UI could show −0.8° elevation while shadow construction clamped the calculation to +1.4°.</td><td>The physics amendment was broad but lacked a consistency acceptance test.</td><td>Require one sun vector for displayed azimuth/elevation, lighting and shadow geometry; disclose below-horizon behavior.</td></tr>
+            <tr><td>Cappadocia terrain looked like repeated cones on a plane.</td><td>The evaluated build used one height-deformed plane and many low-segment lathed chimney profiles.</td><td>The negative constraint existed, but no minimum terrain-family or near-field uniqueness contract made it expensive to violate.</td><td>Require connected erosion-sculpted ridges and multiple formation families, with unique hero/mid silhouettes and terrain continuity tests.</td></tr>
+            <tr><td>Caves looked applied rather than excavated.</td><td>Cave mouths were represented as dark flat surfaces rather than cavities with wall thickness and parallax.</td><td>“Visible cave dwellings” specified presence, not geometric evidence.</td><td>Require recessed cavities, parallax/displacement or actual interior depth, with entrances integrated into tuff formations.</td></tr>
+            <tr><td>Balloons were numerous but materially simple.</td><td>Envelopes were lathed forms with mostly graphic canvas patterns; baskets and hardware were simple boxes/lines.</td><td>The master rewarded count, motion and procedural efficiency before close-pass fidelity.</td><td>Define cloth panels, seams, weave, translucency, mouth rigging, burner hardware, ropes and wicker for hero balloons; use cheaper LODs only at distance.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>The central prompt-design correction</h3>
+        <p>The original master optimized a multi-objective bundle without a clear priority order. Coding agents rationally spent effort on feature breadth: three motions, several camera modes, controls, quality settings, procedural density and broad browser compatibility. Photorealism was only implied—and “restrained stylization” explicitly pointed elsewhere.</p>
+        <pre>Old priority (implicit): ambition ≈ breadth ≈ interaction ≈ motion ≈ performance ≈ appearance
+
+Revised priority (explicit):
+1. factual and physical correctness
+2. documentary visual realism of hero subject and defining landscape
+3. coherent lighting/material response
+4. interaction and motion
+5. performance and world breadth
+6. decorative UI</pre>
+        <p>Physics and realism were separated. Physics asks whether motion, support, light and cause are coherent. Visual realism asks whether geometry, surface microstructure, material response, scale, light transport and atmospheric depth resemble the subject. A physically plausible low-poly box remains a low-poly box.</p>
+
+        <details open>
+          <summary>Revised Stonehenge project delta</summary>
+          <pre>Create a documentary-realistic, present-day Stonehenge shadow-and-solstice explorer on Salisbury Plain. Use the monument location at approximately 51.179° N, 1.825° W and state the modern reference year used for solar calculations. Model the surviving present-day arrangement rather than a reconstructed perfect ring: preserve the current six outer sarsen lintels, fallen and leaning stones, gaps, individual asymmetry, tool/erosion marks, lichen, pits, root staining, and visible mortise-and-tenon evidence where appropriate.
+
+Hero stones must not read as transformed boxes. Use scanned/high-resolution local meshes when licensing permits, or deeply subdivided and displaced unique meshes with no repeated near-field silhouette. Give sarsen and bluestone distinct physically based materials with albedo, roughness, normal and ambient-occlusion detail at close-inspection texel density.
+
+Form the ditch, bank and Avenue as low, irregular, weathered terrain relief continuous with the grass field; never use visible torus rings. Add plausible drainage, worn paths, fencing and sparse visitors as scale cues. Grass motion follows one documented wind field.
+
+Compute midsummer sunrise and midwinter sunset from the documented location/year. Use one consistent sun vector for the UI readout, sun disc, directional illumination and computed shadow. Do not clamp the shadow to a different elevation than the displayed sun. When the solar disc is below the geometric horizon, report that state and do not invent a daylight shadow. Allow manual azimuth/elevation override and label it manual.
+
+Open on a reference-matched Avenue view, then provide circle, Heel Stone, midsummer and midwinter cameras. Include reference, clay, material-debug, shadow-debug and final PBR review states. Pass both a wide composition and a stone-surface close-up before adding secondary animation or decorative interface.</pre>
+        </details>
+
+        <details open>
+          <summary>Revised Cappadocia project delta</summary>
+          <pre>Create a documentary-realistic Cappadocia balloon flight at 06:10 sunrise over Göreme. The defining landscape is a connected, erosion-sculpted tuff system—not isolated cones on a flat plane. Build branching valleys, ridges, aprons, gullies, pinnacles, mushroom-cap chimneys, clustered columns and cave-cut settlement as multiple geological families. Near and midground formations must have unique silhouettes, stratified erosion and non-repeating surface breakup.
+
+Use physically based layered-tuff materials with albedo, roughness, normal, ambient-occlusion and selective displacement detail. Cave dwellings must read as excavated cavities with recess, wall thickness and parallax/interior darkness; do not paste black planes onto the rock. Add roads, orchards, villages and sparse ground crews only where spatially plausible.
+
+Stage 80–100 balloons across distance and altitude using real hot-air-balloon proportions and a shared wind field whose velocity varies smoothly with altitude. Prevent collisions and terrain penetration. Hero balloons for basket-height and close-pass cameras require individual fabric panels, seams, subtle weave, transmitted dawn light, mouth structure, suspension cables, burner frame/hardware, tanks and woven basket detail. Distant balloons may use progressively cheaper LODs without changing their silhouettes abruptly.
+
+Use a physically plausible dawn sun, HDR-derived or locally generated environment illumination, aerial perspective and long shadows. Shadow sides of balloons and terrain must retain readable bounced/environment light rather than collapsing to black. Dust and haze follow terrain and wind; they are not full-screen fog.
+
+Provide valley-floor, basket-height drift, high-fleet and close-pass cameras. Include reference, clay, material-debug, shadow-debug and final PBR review states. The acceptance gate includes a wide valley frame, a terrain close-up, a cave close-up and a hero-balloon close pass. Remove secondary UI, motion or distant balloon count before compromising those four views.</pre>
+        </details>
+
+        <div class="callout warning"><strong>Snapshot warning.</strong> The screenshots above and the diagnosis refer to the evaluated builds captured around 18:58 local time. The Cappadocia source file was modified later (19:55) and now contains additional PBR/environment/debug-view code. That later state was not silently used to rewrite the historical diagnosis. It should receive a fresh, separately dated evaluation.</div>
+      </section>
+
+      <section id="tools">
+        <h2>11. Tools, features and agents used</h2>
+        <table>
+          <thead><tr><th>Tool or feature</th><th>Why it was chosen</th><th>What it produced</th><th>Limit</th></tr></thead>
+          <tbody>
+            <tr><td>Video/transcript acquisition</td><td>Preserve a complete, timestamp-addressable source rather than rely on memory or a summary.</td><td>Original video, metadata and transcript with hashes.</td><td>Does not expose hidden prompts.</td></tr>
+            <tr><td>H.264 analysis proxy + frame extraction</td><td>Make temporal review fast and deterministic while retaining the original.</td><td>21 five-second contact sheets and 38 targeted frames.</td><td>Five-second sampling can miss brief states.</td></tr>
+            <tr><td>Public Git repository snapshot</td><td>Inspect Peter's own prompt corpus at a fixed revision.</td><td>63-entry local corpus at a recorded commit.</td><td>Publication and submission are different events.</td></tr>
+            <tr><td>Text/code search and structured counts</td><td>Test whether candidate patterns recur across the whole corpus and locate implementation choices.</td><td>Pattern frequencies and source-line evidence.</td><td>Keyword methods undercount synonyms and do not prove causality.</td></tr>
+            <tr><td>Browser/runtime automation</td><td>Run both apps at a fixed viewport, exercise controls, capture console/page errors and save comparable views.</td><td>Four evaluation screenshots and interaction evidence.</td><td>Headless GPU timing was not representative.</td></tr>
+            <tr><td>Direct source inspection</td><td>Explain why a visible artifact looked simple or inconsistent.</td><td>Connections from pixels to primitives, materials, terrain generation and solar logic.</td><td>Code says what was implemented, not what Peter originally intended.</td></tr>
+            <tr><td>Separate coding agents</td><td>The user dispatched Stonehenge and Cappadocia as independent build tasks from the reconstructed prompts.</td><td>Two runnable local projects.</td><td>Those agents' full private reasoning is not part of this task transcript.</td></tr>
+            <tr><td><code>/dev-journey</code> skill</td><td>Require a chronological, auditable, warts-and-all retrospective rather than a sanitized summary.</td><td>This HTML.</td><td>The past is reconstructed from surviving evidence; no event can be invented to fill gaps.</td></tr>
+          </tbody>
+        </table>
+        <p>No subagent was delegated to write this journey. The reconstruction and artifact authoring were performed inline. The two application builders were separate user-launched coding tasks, not hidden participants in this report-writing step.</p>
+      </section>
+
+      <section id="failures">
+        <h2>12. What went wrong, near misses, and fixes</h2>
+        <table>
+          <thead><tr><th>Failure or near miss</th><th>Evidence / exact error where retained</th><th>Fix and lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Original AV1 contact-sheet pass was too slow and incomplete.</td><td>Only a partial set was produced on the first pass.</td><td>Create a 720p H.264 analysis proxy, preserve the original, then regenerate the complete 21-sheet set. Analysis representations should be optimized separately from archival representations.</td></tr>
+            <tr><td>A PowerShell counting expression was malformed.</td><td><code>ParserError … An empty pipe element is not allowed.</code></td><td>Break the expression into named variables and validate output before using it. Compact shell one-liners are not evidence if they do not execute.</td></tr>
+            <tr><td>A browser accessibility-tree read returned an unchanged-state error.</td><td><code>Cannot read properties of undefined (reading 'slice')</code></td><td>Use a fresh snapshot/screenshot rather than slicing absent tree output.</td></tr>
+            <tr><td>Local <code>file:///</code> navigation was blocked in one browser path.</td><td>The browser surface rejected that navigation mode.</td><td>Serve the static artifact over a verified localhost address for visual review; keep the final artifact fully offline-capable.</td></tr>
+            <tr><td>Port reuse nearly routed the evaluator to the wrong app.</td><td>The first run waited for <code>#scene</code> and timed out while Vite had auto-selected a different port: <code>Locator.bounding_box: Timeout 30000ms exceeded … waiting for locator("#scene")</code>.</td><td>Bind and verify an explicit port, confirm page title/URL before capture, and treat a screenshot without identity checks as potentially misattributed.</td></tr>
+            <tr><td>Headless animation timing hung or throttled.</td><td><code>requestAnimationFrame</code>-based sampling did not produce a trustworthy frame-rate measurement under the headless/SwiftShader environment.</td><td>Report that frame rate was not measured. Do not convert an unrepresentative headless number into a performance claim.</td></tr>
+            <tr><td>Both production builds emitted large-chunk warnings.</td><td>Vite warned about chunks larger than 500 kB.</td><td>Record as an optimization issue, not a functional failure. Bundle size and render realism are separate evaluation axes.</td></tr>
+            <tr><td>Repository-correlation count drifted.</td><td>The front page said 18 while the completed guide contained 21 <code>Repo-correlated</code> labels.</td><td>Recount from the canonical guide and update the stale summary. Derived counts should be generated or regression-checked.</td></tr>
+            <tr><td>The first master prompt optimized the wrong bundle.</td><td>Both outputs passed many functional tests but failed the user's realism expectation.</td><td>Add explicit objective ordering and multi-view visual gates. A prompt can be internally successful and externally wrong.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="verification">
+        <h2>13. Verification performed—and not performed</h2>
+        <h3>Verified</h3>
+        <ul>
+          <li>The source package includes the original video, analysis proxy, transcript, repository snapshot, hashes, 21 contact sheets and 38 targeted frames.</li>
+          <li>The inventory contains 36 3D/interactive projects plus one SVG study, split into the generation regimes Peter narrates.</li>
+          <li>The repository snapshot contains 63 prompt entries; the stated keyword counts were mechanically derived.</li>
+          <li>Both initial local apps built and rendered without captured console/page errors during the evaluation run.</li>
+          <li>Stonehenge presets and reset changed the rendered state; Cappadocia camera/quality/reset controls changed the rendered state.</li>
+          <li>Source inspection supports the geometric and solar-consistency diagnoses recorded above.</li>
+          <li>The resulting HTML uses only local assets, has a restrictive content-security policy, semantic headings, keyboard-native navigation, responsive layout and print styles.</li>
+        </ul>
+        <h3>Not verified</h3>
+        <ul>
+          <li>The exact text Peter submitted, system instructions, random seeds, hidden scaffolds, corrections or Arena execution logs.</li>
+          <li>Run-to-run reproducibility of any one-shot demonstration.</li>
+          <li>Historical, geographic, biological and scientific accuracy for all 37 scenes.</li>
+          <li>Representative frame rate on the user's physical GPU.</li>
+          <li>The later Cappadocia source revision visible on disk after the recorded evaluation screenshots.</li>
+          <li>Whether production v2 alone, without curated assets or iteration, will achieve the requested photorealism.</li>
+        </ul>
+        <div class="callout failure"><strong>Most important falsifier.</strong> If the revised prompt is tested without a reference pack, licensed geometry/material assets and multiple review passes, and it still produces primitive-looking hero objects, that would not show that more prompt prose is needed. It would show that the remaining bottleneck is the asset/modeling pipeline or model capability. Prompt specificity cannot manufacture information or geometry that the workflow refuses to acquire.</div>
+      </section>
+
+      <section id="status">
+        <h2>14. Where things stand</h2>
+        <ul>
+          <li><strong>Complete:</strong> end-to-end source package, scene inventory, benchmark-style master prompt, 37 project deltas/workflows, meta-pattern analysis, unknown-unknowns register, two initial implementations, evidence-backed evaluation, physics amendment, and proposed realism-first revisions.</li>
+          <li><strong>Complete in this artifact:</strong> chronological reconstruction, repository-role audit, derivation method for each project, explicit failure record, and the revised Stonehenge/Cappadocia deltas.</li>
+          <li><strong>Open:</strong> synchronize the production v2 master into a standalone canonical prompt file and dispatch clean rebuilds if desired.</li>
+          <li><strong>Open:</strong> re-evaluate the later Cappadocia revision separately rather than assuming the old screenshots describe the current code.</li>
+          <li><strong>Open:</strong> perform fixed-seed repeat trials across reasoning levels if the goal shifts from demonstration replication to causal model evaluation.</li>
+        </ul>
+        <h3>Recommended next experiment</h3>
+        <p>Do a paired Stonehenge rebuild at the same viewport and model settings: one run with the old benchmark master, one with the realism-first production master plus a small, licensed reference/asset pack. Use identical camera shots and blind-rate silhouette fidelity, microgeometry, material response, lighting coherence, factual layout, interaction, frame time and bundle size. That separates prompt effect from model/seed variance and, crucially, tests whether the missing realism is linguistic or asset-bound.</p>
+      </section>
+
+      <section id="appendix">
+        <h2>Appendix — derivation register for all 37 projects</h2>
+        <p>This table documents how the individual specification was formed. It does not repeat the full prompt text; the copyable versions remain in the <a href="replication_guide.md">replication guide</a>.</p>
+        <table>
+          <thead><tr><th>#</th><th>Project</th><th>Regime / evidence basis</th><th>What the delta or workflow isolated</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>London Through Time</td><td><span class="badge observed">Observed</span> <span class="badge narrated">Narrated multi-hour</span></td><td>Canonical geography shared by nine eras; era data layers; preserved camera; transition architecture; historical review and OSM attribution.</td></tr>
+            <tr><td>2</td><td>D-Day / Omaha Beach</td><td><span class="badge observed">Observed</span> <span class="badge narrated">Narrated multi-hour</span></td><td>Blender-to-glTF asset bible, surf/terrain/runtime separation, crowd flow fields, timeline phases and non-glamorizing documentary framing.</td></tr>
+            <tr><td>3</td><td>PALIMPSEST / The Fallen Coast</td><td><span class="badge observed">Observed</span> <span class="badge narrated">Narrated multi-hour</span></td><td>First-person vertical slice, three regions, data-driven content, locomotion/combat/puzzle loop, playtime instrumentation rather than an unverified “ten hours.”</td></tr>
+            <tr><td>4</td><td>Golden Gate Bridge</td><td><span class="badge correlated">Repo 06</span></td><td>Full span and bay context, cable/bridge proportions, height-based fog, traffic/boats, cameras and the exclusion of two towers in generic water.</td></tr>
+            <tr><td>5</td><td>Cappadocia Balloons</td><td><span class="badge correlated">Repo 26</span></td><td>06:10 dawn, balloon count/altitude variation, Göreme morphology, haze/crews, flight cameras and anti-clone/anti-cone constraints.</td></tr>
+            <tr><td>6</td><td>Stonehenge</td><td><span class="badge correlated">Repo 27</span></td><td>Present-day arrangement, solar/shadow controls, Avenue view, earthworks/visitors and an explicit ban on a reconstructed perfect ring.</td></tr>
+            <tr><td>7</td><td>Neuschwanstein</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Recognizable alpine castle massing, mountain/forest context, bridge and season/light cameras; no exact repository counterpart.</td></tr>
+            <tr><td>8</td><td>Giant Pacific Octopus</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Underwater anatomy, arm locomotion, suckers, camouflage, den ecology and camera distances derived from the visible biological scene.</td></tr>
+            <tr><td>9</td><td>Formula 1</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Track/car spectacle, race systems, speed cues, broadcast/onboard cameras and mechanically coherent vehicle motion.</td></tr>
+            <tr><td>10</td><td>X-Ray Cabinet</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Dark medical/editorial display, layered anatomy or scanned-object reveal, exposure/slice controls and a non-diagnostic caveat.</td></tr>
+            <tr><td>11</td><td>Brooks Falls</td><td><span class="badge correlated">Repo 59</span></td><td>Waterfall hydrodynamics, salmon runs, bears with independent behavior, cameras and ecological rather than synchronized motion.</td></tr>
+            <tr><td>12</td><td>Inside a Leaf</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Cross-scale biological journey through cuticle, stomata, cells and transport, with scale-appropriate representations and uncertainty.</td></tr>
+            <tr><td>13</td><td>Building the Great Pyramid</td><td><span class="badge correlated">Repo 16/17</span></td><td>Construction staging, labor/logistics, blocks/ramps/cameras and a distinction between process reconstruction and finished-Giza alternative.</td></tr>
+            <tr><td>14</td><td>Monet's Water Lilies</td><td><span class="badge correlated">Repo 46</span></td><td>A world made from brush dabs rather than a normal pond with a post-process filter; palette recomposition across light states.</td></tr>
+            <tr><td>15</td><td>Van Gogh's Town</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Multiple paintings unified into one navigable town, directional impasto logic, color rhythm and a coherent camera journey.</td></tr>
+            <tr><td>16</td><td>One Riverbank, 2,000 Years</td><td><span class="badge correlated">Repo 04</span></td><td>One stable location transformed across eras, spatial correspondences, time controls and continuity rather than unrelated dioramas.</td></tr>
+            <tr><td>17</td><td>Tower of Babel</td><td><span class="badge correlated">Repo 48</span></td><td>Monumental spiraling construction world, dense labor/material systems, height cameras and legible structural support.</td></tr>
+            <tr><td>18</td><td>A Garden in the Rain</td><td><span class="badge correlated">Repo 50</span></td><td>Layered rainfall, wet material response, foliage movement, puddles/drainage and controls whose states alter the garden.</td></tr>
+            <tr><td>19</td><td>Manhattan</td><td><span class="badge correlated">Repo 01</span></td><td>Entire-island first frame, continuous multiscale zoom, true macro-geography, city life and nested LOD rather than a skyline slab.</td></tr>
+            <tr><td>20</td><td>Demolition Playground</td><td><span class="badge correlated">Repo 32</span></td><td>Destruction, debris and tool interactions with support/collision rules and reversible/resettable experimentation.</td></tr>
+            <tr><td>21</td><td>Istanbul</td><td><span class="badge correlated">Repo 07</span></td><td>Bosphorus-centered world, layered skyline/minarets, ferries, neighborhoods, bridge/shore cameras and cross-continent scale.</td></tr>
+            <tr><td>22</td><td>Humpback Whale</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Ocean scale, whale anatomy and motion, surface/underwater cameras, bubble/particle behavior and biological uncertainty.</td></tr>
+            <tr><td>23</td><td>Swiss Alpine Trail</td><td><span class="badge reconstructed">Research-dependent</span></td><td>Trail-scale navigation, topography, vegetation/elevation bands, weather and geographic details that require external verification.</td></tr>
+            <tr><td>24</td><td>PAVO Peacock SVG</td><td><span class="badge reconstructed">Reconstructed SVG</span></td><td>Vector anatomy, feather hierarchy, coordinated display animation and graphic composition; intentionally excluded from the 36-project 3D count.</td></tr>
+            <tr><td>25</td><td>Ancient Rome / Colosseum</td><td><span class="badge correlated">Repo 02/19</span> <span class="badge narrated">Six levels</span></td><td>A constant specification rerun across reasoning levels; city/Colosseum scope, voxels/instancing and controlled comparison criteria.</td></tr>
+            <tr><td>26</td><td>Sagrada Família</td><td><span class="badge reconstructed">Reconstructed</span> <span class="badge narrated">Six levels</span></td><td>Recognizable exterior/interior massing, Barcelona context, camera parity and a six-level evaluation beyond screenshot richness.</td></tr>
+            <tr><td>27</td><td>Paris</td><td><span class="badge correlated">Repo 05</span></td><td>Eiffel-centered but city-scale scene, Seine/bridges/avenues, close and wide inspection, traffic and progressive LOD.</td></tr>
+            <tr><td>28</td><td>Westminster</td><td><span class="badge reconstructed">Reconstructed</span></td><td>Palace/clock-tower silhouette, Thames/bridge context, traffic/boats/crowds and London editorial framing.</td></tr>
+            <tr><td>29</td><td>Washington / White House</td><td><span class="badge reconstructed">Reconstructed</span></td><td>White House/grounds, axial urban context, scale cues and cameras; no matching public entry was treated as exact.</td></tr>
+            <tr><td>30</td><td>Lost Valley</td><td><span class="badge correlated">Repo 13</span></td><td>Enclosed fantasy-valley geography, monumental discovery, atmospheric depth, traversal and controlled mystery.</td></tr>
+            <tr><td>31</td><td>Chocolate Garden / Cacao Conservatory</td><td><span class="badge correlated">Repo 14</span></td><td>Botanical-confection ontology, material contrast, walk-through cameras, growth/production details and themed UI.</td></tr>
+            <tr><td>32</td><td>Emerald City</td><td><span class="badge correlated">Repo 12</span></td><td>Green crystalline skyline, road/landscape approach, glow/reflection, city context and a non-generic fantasy silhouette.</td></tr>
+            <tr><td>33</td><td>Floating Mountains</td><td><span class="badge reconstructed">Related repo 30 only</span></td><td>Levitation, atmospheric depth, waterfalls/vegetation and physically declared fantasy rules; the related repository entry was not elevated to an exact match.</td></tr>
+            <tr><td>34</td><td>Pileh Lagoon</td><td><span class="badge correlated">Repo 10</span></td><td>Enclosed karst lagoon, water/boat life, cliffs and depth/shore cameras with tropical material/light language.</td></tr>
+            <tr><td>35</td><td>Grand Budapest</td><td><span class="badge correlated">Repo 15</span></td><td>Symmetrical hotel/set spectacle, mountain context, miniature-film palette, interiors/cameras and controlled animation.</td></tr>
+            <tr><td>36</td><td>Forbidden City</td><td><span class="badge correlated">Repo 09</span></td><td>Axial palace hierarchy, courtyards/roofs, crowds/flags, whole-complex scale and progressive representation.</td></tr>
+            <tr><td>37</td><td>Atlantis</td><td><span class="badge correlated">Repo 11</span></td><td>Underwater city hierarchy, water/caustics/life, monumental reveal, exploration and fantasy rules kept internally coherent.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="callout" aria-labelledby="provenance-title">
+        <h2 id="provenance-title">Sources and provenance</h2>
+        <ul>
+          <li>Arena AI / Peter Gostev, <a href="https://www.youtube.com/watch?v=GQPi39sjNhU">“GPT-6-Astra | First impressions”</a>, 33:49.8.</li>
+          <li><a href="source-manifest.json">Source manifest</a>: representations, hashes, coverage and repository commit.</li>
+          <li><a href="index.html">Primary visual reverse-engineering report</a>.</li>
+          <li><a href="replication_guide.md">Canonical prompt and workflow guide</a>.</li>
+          <li><a href="prompt_reverse_engineering_playbook.html">Method, meta-pattern and unknown-unknowns playbook</a>.</li>
+          <li><a href="evidence_frames/README.md">Frame-evidence index</a>.</li>
+          <li><code>projects/stonehenge</code> and <code>projects/cappadocia</code>: sanitized implementation snapshots inspected for the evaluation and public release.</li>
+        </ul>
+      </section>
+    </article>
+  </main>
+  <footer>Static, offline-capable HTML. No remote scripts, fonts, trackers or embedded third-party frames. Past events are explicitly reconstructed from the surviving evidence listed above.</footer>
+</body>
+</html>

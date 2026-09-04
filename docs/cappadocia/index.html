@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#806052" />
+    <meta name="description" content="A reference-grounded Three.js dawn balloon flight through an erosion-sculpted Cappadocian valley." />
+    <title>Cappadocia · First Ascent</title>
+    <script type="module" crossorigin src="./assets/index-BgHKvWIN.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-L1of9Mcg.css">
+  </head>
+  <body>
+    <main class="experience">
+      <canvas id="world" aria-label="Interactive 3D dawn flight over the connected valleys and rock-cut dwellings of Cappadocia"></canvas>
+
+      <header class="masthead" aria-label="Place and authored conditions">
+        <div class="identity">
+          <strong>Cappadocia</strong>
+          <span>Göreme field study</span>
+        </div>
+        <div class="telemetry" aria-live="polite">
+          <span><b id="timeReadout">06:12</b> local</span>
+          <span><b>38.6431° N</b> 34.8289° E</span>
+          <span><b id="balloonReadout">42</b> balloons</span>
+          <span><b id="windReadout">ENE 3.0 m/s</b> wind model</span>
+        </div>
+        <button id="methodButton" class="text-button" type="button">Method &amp; limits</button>
+      </header>
+
+      <section class="scene-label" aria-label="Scene title">
+        <h1>First ascent</h1>
+        <p>Warm air, welded tuff, long dawn shadows.</p>
+      </section>
+
+      <aside class="observation" aria-label="Current observation">
+        <span>Observer</span>
+        <strong id="altitudeReadout">82 m AGL</strong>
+        <span>Render</span>
+        <strong id="modeReadout">PBR</strong>
+      </aside>
+
+      <div id="debugLegend" class="debug-legend" hidden></div>
+
+      <nav class="controls" aria-label="Experience controls">
+        <label>
+          <span>Camera</span>
+          <select id="viewSelect" aria-label="Camera preset">
+            <option value="hero">First light</option>
+            <option value="ground">Valley floor</option>
+            <option value="close">Close pass</option>
+            <option value="settlement">Rock-cut settlement</option>
+            <option value="wide">Valley survey</option>
+          </select>
+        </label>
+        <label>
+          <span>Inspection</span>
+          <select id="renderSelect" aria-label="Inspection rendering mode">
+            <option value="pbr">PBR materials</option>
+            <option value="clay">Neutral clay</option>
+            <option value="material">Surface normals</option>
+            <option value="shadow">Shadow study</option>
+          </select>
+        </label>
+        <label class="light-control">
+          <span>Dawn progression</span>
+          <input id="lightControl" type="range" min="0" max="100" value="42" aria-label="Dawn progression" />
+        </label>
+        <label>
+          <span>Quality</span>
+          <select id="qualitySelect" aria-label="Rendering quality">
+            <option value="field">Field</option>
+            <option value="travel">Travel</option>
+            <option value="quiet">Quiet</option>
+          </select>
+        </label>
+        <button id="pauseButton" type="button" aria-pressed="false">Pause</button>
+        <button id="resetButton" type="button">Reset</button>
+      </nav>
+
+      <div class="gesture" aria-hidden="true">Drag to orbit · wheel to travel · right-drag to pan</div>
+      <div id="status" class="status" role="status">
+        <span>Carving the valley</span>
+        <small id="fatalMessage">Preparing local geometry and light…</small>
+      </div>
+
+      <dialog id="methodPanel" class="method-panel" aria-labelledby="methodTitle">
+        <button id="closeMethod" class="close" type="button" aria-label="Close method and limits">Close</button>
+        <p class="section-label">Disclosure</p>
+        <h2 id="methodTitle">Method and limits</h2>
+        <p>This is a reference-grounded artistic reconstruction, not survey data, a flight simulator, or a navigational product.</p>
+        <dl>
+          <div><dt>World scale</dt><dd>1 Three.js unit = 1 metre. +X east, +Y up, +Z south.</dd></div>
+          <div><dt>Geology</dt><dd>Connected valleys and varied hoodoos follow published erosion, spacing, slope, and tuff-layer constraints. Forms are deterministic procedural interpretations, not scans of named sites.</dd></div>
+          <div><dt>Rock-cut spaces</dt><dd>Openings have extruded stone rims and recessed tunnel volumes. They evoke regional construction by removal, but do not reproduce a specific church or dwelling.</dd></div>
+          <div><dt>Sun</dt><dd>Authored dawn at 108.5° azimuth and 5.8° elevation. Sky, visible disc, direct light, HDR environment and shadows share one direction. Values are illustrative, not a date-specific ephemeris.</dd></div>
+          <div><dt>Balloons</dt><dd>Vertical motion uses a conservative buoyancy/drag approximation with thermostatic burner control; horizontal advection follows a layered ENE wind. Pilot procedures, wake turbulence and full envelope thermodynamics are not simulated.</dd></div>
+          <div><dt>Assets</dt><dd>No mutable runtime assets or remote calls. All visible geometry and textures are generated locally in code; the visual benchmark is documentation-only.</dd></div>
+        </dl>
+        <p class="links"><a href="./REFERENCES.md">Reference manifest</a><a href="./METHOD.md">Full model notes</a><a href="./ACCEPTANCE.md">Acceptance results</a></p>
+      </dialog>
+      <noscript>This experience requires JavaScript and WebGL.</noscript>
+    </main>
+  </body>
+</html>

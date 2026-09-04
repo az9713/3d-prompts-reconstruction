@@ -1,0 +1,38 @@
+# Dependencies and generated caches
+node_modules/
+**/node_modules/
+**/__pycache__/
+*.pyc
+.vite/
+
+# Local builds; GitHub Pages output under docs/ is intentionally tracked
+**/dist/
+
+# Raw third-party source media and transcripts are deliberately private
+source_video*.mp4
+source_video.jpg
+source_video.info.json
+source_video.description
+transcript.txt
+reference_repo/
+
+# Local analysis utilities and transient logs
+runtime_evaluation.py
+build_report.py
+journey-preview*.log
+
+# Unpublished frame sweeps; retain only report-cited frames
+evidence_frames/contact_5s/
+evidence_frames/contact_5s_720/
+evidence_frames/README.md
+evidence_frames/targeted/*
+!evidence_frames/targeted/t_0020.png
+!evidence_frames/targeted/t_0315.png
+!evidence_frames/targeted/t_1105.png
+!evidence_frames/targeted/t_1725.png
+
+# Unused evaluation captures
+evaluation_evidence/*
+!evaluation_evidence/stonehenge-hero.png
+!evaluation_evidence/cappadocia-hero.png
+

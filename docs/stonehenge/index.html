@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#dbe4e1" />
+    <title>Stonehenge — Shadow & Solstice</title>
+    <script type="module" crossorigin src="./assets/index-DojuvcsG.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DvMD8n8w.css">
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="scene" aria-label="Interactive three-dimensional view of present-day Stonehenge"></canvas>
+      <header class="masthead">
+        <div class="site-mark"><span></span> Salisbury Plain, Wiltshire</div>
+        <div class="title-wrap">
+          <h1>Stonehenge</h1>
+          <p>Shadow &amp; Solstice Explorer</p>
+        </div>
+        <button id="reset" class="quiet-button" type="button">Reset to Avenue</button>
+      </header>
+
+      <section class="scene-note" aria-live="polite">
+        <span class="note-rule"></span>
+        <div><b id="sun-label">Pale daylight</b><small id="sun-reading">azimuth 138° · elevation 29°</small></div>
+      </section>
+
+      <section class="controls collapsed" aria-label="Explorer controls">
+        <button id="controls-toggle" class="control-disclosure" type="button" aria-expanded="false">
+          <span>Solar controls</span><b id="compact-sun">138° / 29°</b><i aria-hidden="true">+</i>
+        </button>
+        <div class="controls-body">
+          <div class="control-subhead"><span>Scene systems</span><button id="guide" class="toggle active" type="button" aria-pressed="true">Alignment guide</button></div>
+          <div class="preset-row">
+            <button class="preset" data-preset="midsummer" type="button">Midsummer<br><small>sunrise · 2026</small></button>
+            <button class="preset" data-preset="midwinter" type="button">Midwinter<br><small>sunset · 2026</small></button>
+          </div>
+          <label>Azimuth <output id="azimuth-out">138°</output><input id="azimuth" type="range" min="0" max="359" value="138" /></label>
+          <label>Elevation <output id="elevation-out">29°</output><input id="elevation" type="range" min="-2" max="72" value="29" /></label>
+          <div class="switch-row">
+            <button id="wind" class="toggle active" type="button" aria-pressed="true">Grass wind</button>
+            <button id="visitors" class="toggle active" type="button" aria-pressed="true">Visitors · 36</button>
+          </div>
+          <label class="quality-label">Quality<select id="quality"><option value="high" selected>High</option><option value="low">Low</option></select></label>
+        </div>
+      </section>
+
+      <nav class="views" aria-label="Camera views">
+        <button data-view="avenue" class="active" type="button">Avenue</button>
+        <button data-view="circle" type="button">Circle</button>
+        <button data-view="heel" type="button">Heel Stone</button>
+        <button data-view="plain" type="button">Plain</button>
+      </nav>
+
+      <aside class="legend"><span class="legend-shadow"></span> outer sarsen shadow <i>Drag to orbit · scroll to dolly</i></aside>
+      <button id="info" class="info-button" type="button" aria-expanded="false">Method &amp; limits</button>
+      <section id="method" class="method-panel" hidden>
+        <button id="close-method" type="button" aria-label="Close method and limits">×</button>
+        <p class="eyebrow">Modern astronomical approximation</p>
+        <h2>Built for the living site</h2>
+        <p>Position: <b>51.1831565° N, 1.8588747° W</b> (English Heritage visitor-site coordinate). Year: <b>2026</b>.</p>
+        <p>Solstice presets use the NOAA/Meeus solar equations and the standard sunrise/sunset apparent altitude of −0.833° (solar radius plus nominal refraction); the local horizon is modeled as flat. The displayed shadow is a geometric projection from the outer sarsen uprights and lintels.</p>
+        <p>Atmosphere, terrain, exact stone survey coordinates, historic horizon, and archaeological sight-lines are not modeled. This is not an archaeological-survey reconstruction.</p>
+        <p class="sources">Sources: English Heritage, “Stonehenge Directions”; NOAA Global Monitoring Laboratory, “Sunrise/Sunset Calculations.”</p>
+      </section>
+    </main>
+  </body>
+</html>
